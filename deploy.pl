@@ -224,7 +224,8 @@ compile_server() unless (!$compile_server);
 build_foundation_stack();
 
 log_into_ecr();
-my $docker_image_tag = build_and_push_docker_image($build_docker_image);
+my $docker_image_tag = build_and_push_docker_image($build_docker_image)
+  unless (!$build_docker_image);
 
 # run_cdk_deploy($docker_image_tag);
 
