@@ -20,7 +20,9 @@
     "awsProfile": "default",
     "sslCertificateARN": "default",
     "buildUserPool": true,
-
+    "userPoolConfiguration": {
+      "enabled": true
+    },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/core:target-partitions": [

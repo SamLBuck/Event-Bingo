@@ -1,6 +1,7 @@
 package institute.hopesoftware;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import dev.stratospheric.cdk.ApplicationEnvironment;
@@ -37,14 +38,18 @@ public class InfrastructureApp {
 
         Set<ApplicationComponent> applicationComponents = new HashSet<ApplicationComponent> ();
 
-        boolean buildUserPool = (Boolean) app.getNode().tryGetContext("buildUserPool");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> userPoolConfiguration = (Map<String, Object>) app.getNode().tryGetContext("userPoolConfiguration");
+
+        boolean buildUserPool = (Boolean) userPoolConfiguration.getOrDefault("enabled", false);
+
         if (buildUserPool) {
                 applicationComponents.add(ApplicationComponent.COGNITO_USER_POOL);
         }
 
         ApplicationStack applicationStack = new ApplicationStack(app, String.format("%s-application-stack", applicationName), awsEnvironment, applicationEnvironment, applicationComponents);
         applicationStack.addDependency(foundationStack);
-        
+
         app.synth();
     }
 }
