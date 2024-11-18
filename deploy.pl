@@ -146,6 +146,16 @@ sub build_foundation_stack() {
     print "Success\n";
 }
 
+sub bootstrap_cdk_environment() {
+    chdir ($deploy_dir);
+    my $cdk_command = "cdk bootstrap --profile $awsProfile";
+    `$cdk_command`;
+
+    if ($? != 0) {
+        die "Error running cdk deploy command: $cdk_command";
+    }
+}
+
 sub run_cdk_deploy {
     chdir ($deploy_dir);
     my ($tag) = @_;
@@ -220,6 +230,8 @@ if ($show_help) {
 
 compile_webapp() unless (!$compile_webapp);
 compile_server() unless (!$compile_server);
+
+bootstrap_cdk_environment();
 
 build_foundation_stack();
 
