@@ -13,12 +13,12 @@
     ]
   },
   "context": {
-    "applicationName": "default",
-    "region": "default",
-    "accountId": "default",
+    "applicationName": "sampleapp",
+    "region": "us-east-2",
+    "accountId": "890742562914",
     "environmentName": "staging",
-    "awsProfile": "default",
-    "sslCertificateARN": "default",
+    "awsProfile": "recipebook",
+    "sslCertificateARN": "arn:aws:acm:us-east-2:890742562914:certificate/34e2c20f-a025-475a-9e68-951680851d28",
     "buildUserPool": true,
 
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
