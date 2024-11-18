@@ -54,7 +54,7 @@ sub read_value_from_cdk_json () {
         or die "Cannot open $cdk_json_path to read $variableName";
 
     chomp (my @lines = <$cdk_json_file>);
-    my @desiredLines = grep /"$variableName\s*:", @lines;
+    my @desiredLines = grep /"$variableName\s*":/, @lines;
     if (@desiredLines == 0) {
         die "Could not find $variableName line in $cdk_json_path";
     }
@@ -62,7 +62,7 @@ sub read_value_from_cdk_json () {
         die "There are multiple $variableName lines in $cdk_json_path";
     }
 
-    unless ($desiredLines[0] =~ /$variableName\s*:\s*(\d+)/) {
+    unless ($desiredLines[0] =~ /"$variableName\s*":\s*"?([^"]+)"?/) {
         die "context line $desiredLines[0] does not match expected pattern to read $variableName";
     }
 
