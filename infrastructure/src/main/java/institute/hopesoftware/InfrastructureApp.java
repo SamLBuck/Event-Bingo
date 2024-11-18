@@ -24,7 +24,6 @@ public class InfrastructureApp {
         Validations.requireNonEmpty(applicationName, "applicationName");
 
         String dockerImageTag = (String) app.getNode().tryGetContext("dockerImageTag");
-        Validations.requireNonEmpty(dockerImageTag, "dockerImageTag");
 
         Environment awsEnvironment = Environment
                 .builder()
