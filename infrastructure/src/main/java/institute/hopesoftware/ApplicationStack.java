@@ -55,6 +55,8 @@ public class ApplicationStack extends Stack {
     private void setupCognito() {
         String applicationName = applicationEnvironment.getApplicationName();
         String userPoolName = String.format("%s-user-pool",applicationName);
+        String userPoolClientName = String.format("%s-client", userPoolName);
+
         this.userPool = UserPool.Builder.create(this, "userPool")
                 .userPoolName(userPoolName)
                 .selfSignUpEnabled(false)
@@ -93,7 +95,7 @@ public class ApplicationStack extends Stack {
         List<String> logoutUrls = Arrays.asList("http://localhost:3000/", "myapp://logout");
 
         this.userPoolClient = UserPoolClient.Builder.create(this, "userPoolClient")
-                .userPoolClientName("park-hope-client")
+                .userPoolClientName(userPoolClientName)
                 .generateSecret(false)
                 .userPool(this.userPool)
                 .oAuth(OAuthSettings.builder()
