@@ -70,7 +70,7 @@ sub read_value_from_cdk_json () {
 }
 
 sub log_into_ecr () {    
-    my $login_cmd = "aws ecr get-login-password --region $region --profile $awsPofile | docker login --username AWS --password-stdin $accountId.dkr.ecr.$region.amazonaws.com/$applicationName";
+    my $login_cmd = "aws ecr get-login-password --region $region --profile $awsProfile | docker login --username AWS --password-stdin $accountId.dkr.ecr.$region.amazonaws.com/$applicationName";
 
     print "Logging in to ECR repository ... ";
     `$login_cmd`;
