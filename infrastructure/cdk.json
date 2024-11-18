@@ -20,7 +20,9 @@
     "awsProfile": "recipebook",
     "sslCertificateARN": "arn:aws:acm:us-east-2:890742562914:certificate/34e2c20f-a025-475a-9e68-951680851d28",
     "buildUserPool": true,
-
+    "userPoolConfiguration": {
+      "enabled": true
+    },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/core:target-partitions": [
