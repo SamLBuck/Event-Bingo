@@ -28,7 +28,8 @@ public class UserPoolConfiguration {
         UserPoolConfiguration userPoolConfiguration = new UserPoolConfiguration();
         userPoolConfiguration.setEnabled(enabled);
 
-        Map<String, Object> googleLoginConfiguration = (Map<String, Object>) node.tryGetContext(KEY_GOOGLE_LOGIN_CONFIGURATION);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> googleLoginConfiguration = (Map<String, Object>) configuration.get(KEY_GOOGLE_LOGIN_CONFIGURATION);
         userPoolConfiguration.setGoogleLoginEnabled((Boolean) googleLoginConfiguration.getOrDefault("enabled", false));
 
         if (userPoolConfiguration.isGoogleLoginEnabled()) {
