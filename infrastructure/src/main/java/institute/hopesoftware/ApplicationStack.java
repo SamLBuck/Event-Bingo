@@ -77,7 +77,7 @@ public class ApplicationStack extends Stack {
         userPool.addDomain(applicationName, options);
 
         UserPoolClient.Builder userPoolClientBuilder = 
-            UserPoolClient.Builder.create(scope, "userPoolClient")
+            UserPoolClient.Builder.create(this, "userPoolClient")
                 .userPoolClientName(userPoolClientName)
                 .generateSecret(false)
                 .userPool(this.userPool);
