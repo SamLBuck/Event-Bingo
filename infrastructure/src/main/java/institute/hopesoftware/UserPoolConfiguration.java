@@ -38,10 +38,7 @@ public class UserPoolConfiguration {
             userPoolConfiguration.setGoogleClientId(clientId);
             
             SecretValue googleClientSecret = SecretValue.secretsManager(KEY_GOOGLE_LOGIN_CLIENT_SECRET);
-            if (googleClientSecret == null) {
-                String errorMessage = String.format("You must configure the Google Client Secret in the AWS Secrets Manager using the key %s", KEY_GOOGLE_LOGIN_CLIENT_SECRET);
-                throw new Exception(errorMessage);
-            }            
+            userPoolConfiguration.setGoogleClientSecret(googleClientSecret);           
         }
 
         return userPoolConfiguration;
