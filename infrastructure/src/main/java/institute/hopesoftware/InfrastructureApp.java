@@ -7,6 +7,7 @@ import java.util.Set;
 import dev.stratospheric.cdk.ApplicationEnvironment;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
+import software.amazon.jsii.JsiiError;
 
 public class InfrastructureApp {
     public static void main(final String[] args) {
@@ -52,6 +53,17 @@ public class InfrastructureApp {
                 applicationStack.addDependency(foundationStack);
 
                 app.synth();
+        }
+        catch (JsiiError badConfiguration) {
+            String message = badConfiguration.getMessage();
+            if (message.contains("clientSecret")) {
+                String errorMessage = String.format("You must configure the Google Client Secret in the AWS Secrets Manager using the key %s", UserPoolConfiguration.KEY_GOOGLE_LOGIN_CLIENT_SECRET);
+                System.err.println(errorMessage);
+                System.exit(1);
+            }
+            else {
+                System.err.println(badConfiguration);
+            }
         }
         catch (Exception ex) {
                 System.err.println(ex);
