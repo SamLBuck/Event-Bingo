@@ -21,7 +21,11 @@
     "sslCertificateARN": "default",
     "buildUserPool": true,
     "userPoolConfiguration": {
-      "enabled": true
+      "enabled": false,
+      "googleLoginConfiguration": {
+        "enabled": false,
+        "clientId": "default"
+      }
     },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,

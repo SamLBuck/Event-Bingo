@@ -1,5 +1,6 @@
 package institute.hopesoftware;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -7,7 +8,6 @@ import java.util.Set;
 import dev.stratospheric.cdk.ApplicationEnvironment;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.SecretValue;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.cognito.AccountRecovery;
@@ -27,23 +27,25 @@ import software.amazon.awscdk.services.cognito.UserPoolDomainOptions;
 import software.amazon.awscdk.services.cognito.UserPoolIdentityProviderGoogle;
 import software.constructs.Construct;
 
-public class ApplicationStack extends Stack {    
+public class ApplicationStack extends Stack {        
     private UserPool userPool;
     private UserPoolClient userPoolClient;
     private Environment awsEnvironment;
     private ApplicationEnvironment applicationEnvironment;
+    private Construct scope;
 
     public ApplicationStack(
         final Construct scope, final String id,
         final Environment awsEnvironment,
         final ApplicationEnvironment applicationEnvironment, 
-        Set<ApplicationComponent> componentsToBuild)
+        Set<ApplicationComponent> componentsToBuild) throws Exception
     {
         super(scope, id, StackProps.builder()
             .stackName(applicationEnvironment.prefix("Application"))
             .env(awsEnvironment).build()
         );
 
+        this.scope = scope;
         this.applicationEnvironment = applicationEnvironment;
         this.awsEnvironment = awsEnvironment;
         
@@ -52,7 +54,9 @@ public class ApplicationStack extends Stack {
         }
     }
 
-    private void setupCognito() {
+    private void setupCognito() throws Exception {
+        UserPoolConfiguration userPoolConfiguration = UserPoolConfiguration.fromContextNode(scope.getNode());
+
         String applicationName = applicationEnvironment.getApplicationName();
         String userPoolName = String.format("%s-user-pool",applicationName);
         String userPoolClientName = String.format("%s-client", userPoolName);
@@ -72,43 +76,58 @@ public class ApplicationStack extends Stack {
                 .build();
         userPool.addDomain(applicationName, options);
 
-        AttributeMapping attributeMapping = AttributeMapping.builder()
-                .email(ProviderAttribute.GOOGLE_EMAIL)
-                .familyName(ProviderAttribute.GOOGLE_FAMILY_NAME)
-                .givenName(ProviderAttribute.GOOGLE_GIVEN_NAME)
-                .profilePicture(ProviderAttribute.GOOGLE_PICTURE)
-                .build();
-
-        UserPoolIdentityProviderGoogle provider = UserPoolIdentityProviderGoogle.Builder
-                .create(this, "UserPoolIdentityProviderGoogle")
-                .userPool(userPool)
-                .clientId("427616320048-onrbei8rca7qb25re38bapn6lmo3e9jv.apps.googleusercontent.com")
-                .clientSecretValue(SecretValue.secretsManager("google/login/clientSecret"))
-                .attributeMapping(attributeMapping)
-                .scopes(Arrays.asList("email", "profile", "phone", "openid"))
-                .build();
-
-        List<OAuthScope> oAuthScopes = Arrays.asList(
-                OAuthScope.COGNITO_ADMIN, OAuthScope.EMAIL, OAuthScope.PROFILE);
-
-        List<String> callbackUrls = Arrays.asList("http://localhost:3000/", "myapp://callback");
-        List<String> logoutUrls = Arrays.asList("http://localhost:3000/", "myapp://logout");
-
-        this.userPoolClient = UserPoolClient.Builder.create(this, "userPoolClient")
+        UserPoolClient.Builder userPoolClientBuilder = 
+            UserPoolClient.Builder.create(scope, "userPoolClient")
                 .userPoolClientName(userPoolClientName)
                 .generateSecret(false)
-                .userPool(this.userPool)
-                .oAuth(OAuthSettings.builder()
-                        .flows(OAuthFlows.builder().authorizationCodeGrant(true).build())
-                        .scopes(oAuthScopes)
-                        .callbackUrls(callbackUrls)
-                        .logoutUrls(logoutUrls)
-                        .build())
-                .supportedIdentityProviders(
-                        Arrays.asList(UserPoolClientIdentityProvider.COGNITO,
-                                UserPoolClientIdentityProvider.GOOGLE))
+                .userPool(this.userPool);
+
+        List<UserPoolClientIdentityProvider> identityProviders = new ArrayList<UserPoolClientIdentityProvider> ();
+        identityProviders.add(UserPoolClientIdentityProvider.COGNITO);
+        UserPoolIdentityProviderGoogle provider = null;
+
+        if (userPoolConfiguration.isGoogleLoginEnabled()) {    
+            identityProviders.add(UserPoolClientIdentityProvider.GOOGLE);
+
+            AttributeMapping attributeMapping = AttributeMapping.builder()
+                    .email(ProviderAttribute.GOOGLE_EMAIL)
+                    .familyName(ProviderAttribute.GOOGLE_FAMILY_NAME)
+                    .givenName(ProviderAttribute.GOOGLE_GIVEN_NAME)
+                    .profilePicture(ProviderAttribute.GOOGLE_PICTURE)
+                    .build();
+
+            provider = UserPoolIdentityProviderGoogle.Builder
+                    .create(this, "UserPoolIdentityProviderGoogle")
+                    .userPool(userPool)
+                    .clientId(userPoolConfiguration.getGoogleClientId())
+                    .clientSecretValue(userPoolConfiguration.getGoogleClientSecret())
+                    .attributeMapping(attributeMapping)
+                    .scopes(Arrays.asList("email", "profile", "phone", "openid"))
+                    .build();
+
+            List<OAuthScope> oAuthScopes = Arrays.asList(
+                    OAuthScope.COGNITO_ADMIN, OAuthScope.EMAIL, OAuthScope.PROFILE);
+
+            List<String> callbackUrls = Arrays.asList("http://localhost:3000/", "myapp://callback");
+            List<String> logoutUrls = Arrays.asList("http://localhost:3000/", "myapp://logout");
+
+            OAuthSettings oAuthSettings = OAuthSettings.builder()
+                .flows(OAuthFlows.builder().authorizationCodeGrant(true).build())
+                .scopes(oAuthScopes)
+                .callbackUrls(callbackUrls)
+                .logoutUrls(logoutUrls)
                 .build();
 
-        this.userPoolClient.getNode().addDependency(provider);
+            userPoolClientBuilder = userPoolClientBuilder
+                .oAuth(oAuthSettings);
+        }
+
+        this.userPoolClient = userPoolClientBuilder
+            .supportedIdentityProviders(identityProviders)
+            .build();
+
+        if (userPoolConfiguration.isGoogleLoginEnabled()) {
+            this.userPoolClient.getNode().addDependency(provider);
+        }
     }
 }
