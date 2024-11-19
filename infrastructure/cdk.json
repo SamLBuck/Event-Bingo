@@ -20,7 +20,11 @@
     "awsProfile": "recipebook",
     "sslCertificateARN": "arn:aws:acm:us-east-2:890742562914:certificate/34e2c20f-a025-475a-9e68-951680851d28",
     "userPoolConfiguration": {
-      "enabled": true
+      "enabled": false,
+      "googleLoginConfiguration": {
+        "enabled": false,
+        "clientId": "default"
+      }
     },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,

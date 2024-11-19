@@ -47,10 +47,16 @@ public class InfrastructureApp {
                 applicationComponents.add(ApplicationComponent.COGNITO_USER_POOL);
         }
 
-        ApplicationStack applicationStack = new ApplicationStack(app, String.format("%s-application-stack", applicationName), awsEnvironment, applicationEnvironment, applicationComponents);
-        applicationStack.addDependency(foundationStack);
+        try {
+                ApplicationStack applicationStack = new ApplicationStack(app, String.format("%s-application-stack", applicationName), awsEnvironment, applicationEnvironment, applicationComponents);
+                applicationStack.addDependency(foundationStack);
 
-        app.synth();
+                app.synth();
+        }
+        catch (Exception ex) {
+                System.err.println(ex);
+                System.exit(1);
+        }
     }
 }
 
