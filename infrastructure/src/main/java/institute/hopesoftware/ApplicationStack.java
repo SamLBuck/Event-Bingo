@@ -63,7 +63,7 @@ public class ApplicationStack extends Stack {
 
         this.userPool = UserPool.Builder.create(this, "userPool")
                 .userPoolName(userPoolName)
-                .selfSignUpEnabled(false)
+                .selfSignUpEnabled(userPoolConfiguration.isSelfSignupEnabled())
                 .signInAliases(SignInAliases.builder().email(true).build())
                 .autoVerify(AutoVerifiedAttrs.builder().email(true).build())
                 .mfa(Mfa.OFF)

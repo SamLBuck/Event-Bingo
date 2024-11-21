@@ -13,12 +13,14 @@ public class UserPoolConfiguration {
     public static final String KEY_GOOGLE_LOGIN_CONFIGURATION = "googleLoginConfiguration";
     public static final String KEY_GOOGLE_LOGIN_CLIENT_SECRET = "google/login/clientSecret";
     public static final String KEY_GOOGLE_CLIENT_ID = "clientId";
-
+    public static final String KEY_SELFSIGNIN_ENABLED = "selfSignUpEnabled";
+    
     private boolean enabled;
 
     private boolean googleLoginEnabled;
     private SecretValue googleClientSecret;
     private String googleClientId;
+    private boolean selfSignupEnabled;
 
     public static UserPoolConfiguration fromContextNode(Node node) throws Exception {
         @SuppressWarnings("unchecked")
@@ -31,6 +33,8 @@ public class UserPoolConfiguration {
         @SuppressWarnings("unchecked")
         Map<String, Object> googleLoginConfiguration = (Map<String, Object>) configuration.get(KEY_GOOGLE_LOGIN_CONFIGURATION);
         userPoolConfiguration.setGoogleLoginEnabled((Boolean) googleLoginConfiguration.getOrDefault("enabled", false));
+
+        userPoolConfiguration.setSelfSignupEnabled((Boolean) googleLoginConfiguration.getOrDefault(KEY_SELFSIGNIN_ENABLED, true));
 
         if (userPoolConfiguration.isGoogleLoginEnabled()) {
             String clientId = (String) googleLoginConfiguration.getOrDefault(KEY_GOOGLE_CLIENT_ID, "");

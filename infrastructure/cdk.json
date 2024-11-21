@@ -23,6 +23,7 @@
       "enabled": false,
       "googleLoginConfiguration": {
         "enabled": false,
+        "selfSignUpEnabled": true,
         "clientId": "default"
       }
     },
