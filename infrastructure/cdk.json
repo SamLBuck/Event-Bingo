@@ -21,9 +21,9 @@
     "sslCertificateARN": "arn:aws:acm:us-east-2:890742562914:certificate/34e2c20f-a025-475a-9e68-951680851d28",
     "userPoolConfiguration": {
       "enabled": false,
+      "selfSignUpEnabled": true,
       "googleLoginConfiguration": {
         "enabled": false,
-        "selfSignUpEnabled": true,
         "clientId": "default"
       }
     },
