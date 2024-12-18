@@ -16,7 +16,7 @@ public class DbConfiguration {
     public boolean enabled;
     public String postgresVersion;
     public String dbInstanceClass;
-    public double allocatedStorage;
+    public Integer allocatedStorage;
 
     public DbConfiguration () {
 
@@ -51,10 +51,10 @@ public class DbConfiguration {
 
             Object objAllocatedStorage = configuration.get(KEY_ALLOCATED_STORAGE);
             try {
-                dbConfiguration.setAllocatedStorage((double) objAllocatedStorage);
+                dbConfiguration.setAllocatedStorage((Integer) objAllocatedStorage);
             }
             catch (ClassCastException badAllocatedStorage) {
-                throw new ConfigurationTypeException(KEY_ALLOCATED_STORAGE, "double", objAllocatedStorage);
+                throw new ConfigurationTypeException(KEY_ALLOCATED_STORAGE, "Integer", objAllocatedStorage);
             }
         }
         return dbConfiguration;

@@ -211,7 +211,7 @@ public class ApplicationStack extends Stack {
 
         String postgresVersion = dbConfiguration.getPostgresVersion();
         String dbInstanceClass = dbConfiguration.getDbInstanceClass();
-        double allocatedStorage = dbConfiguration.getAllocatedStorage();
+        Integer allocatedStorage = dbConfiguration.getAllocatedStorage();
 
         dbInstance = CfnDBInstance.Builder.create(this, "postgresInstance")
                 .dbInstanceIdentifier(applicationEnvironment.prefix("database"))
