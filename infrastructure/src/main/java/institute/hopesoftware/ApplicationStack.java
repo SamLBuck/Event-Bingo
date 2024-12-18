@@ -123,8 +123,8 @@ public class ApplicationStack extends Stack {
             List<OAuthScope> oAuthScopes = Arrays.asList(
                     OAuthScope.COGNITO_ADMIN, OAuthScope.EMAIL, OAuthScope.PROFILE);
 
-            List<String> callbackUrls = Arrays.asList("http://localhost:3000/", "myapp://callback");
-            List<String> logoutUrls = Arrays.asList("http://localhost:3000/", "myapp://logout");
+            List<String> callbackUrls = userPoolConfiguration.getCallbackUrls();
+            List<String> logoutUrls = userPoolConfiguration.getLogoutUrls();
 
             OAuthSettings oAuthSettings = OAuthSettings.builder()
                 .flows(OAuthFlows.builder().authorizationCodeGrant(true).build())

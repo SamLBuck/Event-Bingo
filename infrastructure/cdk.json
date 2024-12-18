@@ -25,7 +25,9 @@
       "googleLoginConfiguration": {
         "enabled": false,
         "clientId": "default"
-      }
+      },
+      "callbackUrls": [],
+      "logoutUrls": []
     },
     "vpcConfiguration": {
       "useDefault": false
