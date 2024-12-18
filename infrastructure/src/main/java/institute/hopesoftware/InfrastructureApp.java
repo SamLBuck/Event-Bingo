@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import dev.stratospheric.cdk.ApplicationEnvironment;
+import dev.stratospheric.cdk.Network.NetworkInputParameters;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.jsii.JsiiError;
@@ -24,6 +25,9 @@ public class InfrastructureApp {
 
         String applicationName = (String) app.getNode().tryGetContext("applicationName");
         Validations.requireNonEmpty(applicationName, "applicationName");
+
+        String sslCertificateARN = (String) app.getNode().tryGetContext("sslCertificateARN");
+        Validations.requireNonEmpty(sslCertificateARN, "context variable 'sslCertificateARN' must not be null");
 
         String dockerImageTag = (String) app.getNode().tryGetContext("dockerImageTag");
 
@@ -45,14 +49,17 @@ public class InfrastructureApp {
         boolean buildUserPool = (Boolean) userPoolConfiguration.getOrDefault("enabled", false);
 
         if (buildUserPool) {
-                applicationComponents.add(ApplicationComponent.COGNITO_USER_POOL);
+            applicationComponents.add(ApplicationComponent.COGNITO_USER_POOL);
         }
 
         try {
-                ApplicationStack applicationStack = new ApplicationStack(app, String.format("%s-application-stack", applicationName), awsEnvironment, applicationEnvironment, applicationComponents);
-                applicationStack.addDependency(foundationStack);
+            NetworkInputParameters networkInputParameters = 
+                new NetworkInputParameters().withSslCertificateArn(sslCertificateARN);
 
-                app.synth();
+            ApplicationStack applicationStack = new ApplicationStack(app, String.format("%s-application-stack", applicationName), awsEnvironment, applicationEnvironment, applicationComponents, networkInputParameters);
+            applicationStack.addDependency(foundationStack);
+
+            app.synth();
         }
         catch (JsiiError badConfiguration) {
             String message = badConfiguration.getMessage();

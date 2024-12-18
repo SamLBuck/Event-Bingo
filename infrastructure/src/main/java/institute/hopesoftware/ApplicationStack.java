@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Set;
 
 import dev.stratospheric.cdk.ApplicationEnvironment;
+import dev.stratospheric.cdk.Network;
+import dev.stratospheric.cdk.Network.NetworkInputParameters;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
@@ -34,11 +36,14 @@ public class ApplicationStack extends Stack {
     private ApplicationEnvironment applicationEnvironment;
     private Construct scope;
 
+    private Network network;
+    private NetworkInputParameters networkInputParameters;
+
     public ApplicationStack(
         final Construct scope, final String id,
         final Environment awsEnvironment,
         final ApplicationEnvironment applicationEnvironment, 
-        Set<ApplicationComponent> componentsToBuild) throws Exception
+        Set<ApplicationComponent> componentsToBuild, NetworkInputParameters networkInputParameters) throws Exception
     {
         super(scope, id, StackProps.builder()
             .stackName(applicationEnvironment.prefix("Application"))
@@ -48,10 +53,20 @@ public class ApplicationStack extends Stack {
         this.scope = scope;
         this.applicationEnvironment = applicationEnvironment;
         this.awsEnvironment = awsEnvironment;
+        this.networkInputParameters = networkInputParameters;
         
         if (componentsToBuild.contains(ApplicationComponent.COGNITO_USER_POOL)) {
             setupCognito();
         }
+
+        VpcConfiguration vpcConfiguration = VpcConfiguration.fromContextNode(scope.getNode());
+        if (vpcConfiguration.isUseDefault()) {
+            
+        }
+        else {
+            network = createVpc();
+        }
+
     }
 
     private void setupCognito() throws Exception {
@@ -129,5 +144,12 @@ public class ApplicationStack extends Stack {
         if (userPoolConfiguration.isGoogleLoginEnabled()) {
             this.userPoolClient.getNode().addDependency(provider);
         }
+    }
+
+    private Network createVpc() {
+        String id = String.format("%s-%s-VPC", applicationEnvironment.getApplicationName(), applicationEnvironment.getEnvironmentName());
+
+        return new Network(this, id, awsEnvironment,
+                applicationEnvironment.getEnvironmentName(), networkInputParameters);
     }
 }
