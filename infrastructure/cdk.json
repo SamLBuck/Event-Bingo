@@ -32,6 +32,12 @@
     "vpcConfiguration": {
       "useDefault": false
     },
+    "dbConfiguration": {
+      "enabled": false,
+      "postgresVersion": "12.17",
+      "dbInstanceClass": "db.t3.micro",
+      "allocatedStorage": 20
+    },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/core:target-partitions": [

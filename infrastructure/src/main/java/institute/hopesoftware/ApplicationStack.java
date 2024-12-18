@@ -2,8 +2,10 @@ package institute.hopesoftware;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import dev.stratospheric.cdk.ApplicationEnvironment;
 import dev.stratospheric.cdk.Network;
@@ -27,6 +29,14 @@ import software.amazon.awscdk.services.cognito.UserPoolClient;
 import software.amazon.awscdk.services.cognito.UserPoolClientIdentityProvider;
 import software.amazon.awscdk.services.cognito.UserPoolDomainOptions;
 import software.amazon.awscdk.services.cognito.UserPoolIdentityProviderGoogle;
+import software.amazon.awscdk.services.ec2.CfnSecurityGroup;
+import software.amazon.awscdk.services.ec2.ISubnet;
+import software.amazon.awscdk.services.rds.CfnDBInstance;
+import software.amazon.awscdk.services.rds.CfnDBSubnetGroup;
+import software.amazon.awscdk.services.secretsmanager.CfnSecretTargetAttachment;
+import software.amazon.awscdk.services.secretsmanager.ISecret;
+import software.amazon.awscdk.services.secretsmanager.Secret;
+import software.amazon.awscdk.services.secretsmanager.SecretStringGenerator;
 import software.constructs.Construct;
 
 public class ApplicationStack extends Stack {        
@@ -38,6 +48,10 @@ public class ApplicationStack extends Stack {
 
     private Network network;
     private NetworkInputParameters networkInputParameters;
+
+    private CfnDBInstance dbInstance;
+    private ISecret databaseSecret;
+    private CfnSecurityGroup databaseSecurityGroup;
 
     public ApplicationStack(
         final Construct scope, final String id,
@@ -67,6 +81,10 @@ public class ApplicationStack extends Stack {
             network = createVpc();
         }
 
+        if (componentsToBuild.contains(ApplicationComponent.POSTGRES_DATABASE)) {
+            DbConfiguration dbConfiguration = DbConfiguration.fromContextNode(scope.getNode());
+            createPostgresDatabase(dbConfiguration);
+        }
     }
 
     private void setupCognito() throws Exception {
@@ -151,5 +169,73 @@ public class ApplicationStack extends Stack {
 
         return new Network(this, id, awsEnvironment,
                 applicationEnvironment.getEnvironmentName(), networkInputParameters);
+    }
+
+    private String sanitizeDbParameterName(String dbParameterName) {
+        return dbParameterName
+            // db name must have only alphanumerical characters
+            .replaceAll("[^a-zA-Z0-9]", "")
+            // db name must start with a letter
+            .replaceAll("^[0-9]", "a");
+    }
+
+    private void createPostgresDatabase(DbConfiguration dbConfiguration) {
+        // This code is based on the Stratospheric PostgresDatabase construct
+        // https://github.com/stratospheric-dev/cdk-constructs/blob/main/src/main/java/dev/stratospheric/cdk/PostgresDatabase.java
+        String username = sanitizeDbParameterName(applicationEnvironment.prefix("dbUser"));
+
+        databaseSecurityGroup = CfnSecurityGroup.Builder.create(this, "databaseSecurityGroup")
+                .vpcId(network.getVpc().getVpcId())
+                .groupDescription("Security Group for the database instance")
+                .groupName(applicationEnvironment.prefix("dbSecurityGroup"))
+                .build();
+
+        // This will generate a JSON object with the keys "username" and "password".
+        databaseSecret = Secret.Builder.create(this, "databaseSecret")
+                .secretName(applicationEnvironment.prefix("DatabaseSecret"))
+                .description("Credentials to the RDS instance")
+                .generateSecretString(SecretStringGenerator.builder()
+                        .secretStringTemplate(String.format("{\"username\": \"%s\"}", username))
+                        .generateStringKey("password")
+                        .passwordLength(32)
+                        .excludeCharacters("@/\\\" ").build())
+                .build();
+
+        List<ISubnet> subnets = network.getVpc().getIsolatedSubnets();
+        List<String> subnetIds = subnets.stream().map(addr -> addr.getSubnetId()).collect(Collectors.toList());
+        CfnDBSubnetGroup subnetGroup = CfnDBSubnetGroup.Builder.create(this, "dbSubnetGroup")
+                .dbSubnetGroupDescription("Subnet group for the RDS instance")
+                .dbSubnetGroupName(applicationEnvironment.prefix("dbSubnetGroup"))
+                .subnetIds(subnetIds)
+                .build();
+
+        String postgresVersion = dbConfiguration.getPostgresVersion();
+        String dbInstanceClass = dbConfiguration.getDbInstanceClass();
+        double allocatedStorage = dbConfiguration.getAllocatedStorage();
+
+        dbInstance = CfnDBInstance.Builder.create(this, "postgresInstance")
+                .dbInstanceIdentifier(applicationEnvironment.prefix("database"))
+                .allocatedStorage(String.valueOf(allocatedStorage))
+                .availabilityZone(network.getVpc().getAvailabilityZones().get(0))
+                .dbInstanceClass(dbInstanceClass)
+                .dbName(sanitizeDbParameterName(applicationEnvironment.prefix("database")))
+                .dbSubnetGroupName(subnetGroup.getDbSubnetGroupName())
+                .engine("postgres")
+                .engineVersion(postgresVersion)
+                .masterUsername(username)
+                .masterUserPassword(databaseSecret.secretValueFromJson("password").unsafeUnwrap())
+                .publiclyAccessible(false)
+                .vpcSecurityGroups(Collections.singletonList(databaseSecurityGroup.getAttrGroupId()))
+                .build();
+
+        dbInstance.getNode().addDependency(subnetGroup);
+
+        CfnSecretTargetAttachment.Builder.create(this, "secretTargetAttachment")
+                .secretId(databaseSecret.getSecretArn())
+                .targetId(dbInstance.getRef())
+                .targetType("AWS::RDS::DBInstance")
+                .build();
+
+        dbInstance.getNode().addDependency(network);
     }
 }

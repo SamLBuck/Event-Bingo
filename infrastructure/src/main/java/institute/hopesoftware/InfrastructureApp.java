@@ -52,6 +52,13 @@ public class InfrastructureApp {
             applicationComponents.add(ApplicationComponent.COGNITO_USER_POOL);
         }
 
+        @SuppressWarnings("unchecked")
+        Map<String, Object> dbConfiguration = (Map<String, Object>) app.getNode().tryGetContext(DbConfiguration.Key);
+        boolean buildDb = (Boolean) dbConfiguration.getOrDefault(DbConfiguration.KEY_ENABLED, false);
+        if (buildDb) {
+            applicationComponents.add(ApplicationComponent.POSTGRES_DATABASE);
+        }
+        
         try {
             NetworkInputParameters networkInputParameters = 
                 new NetworkInputParameters().withSslCertificateArn(sslCertificateARN);
