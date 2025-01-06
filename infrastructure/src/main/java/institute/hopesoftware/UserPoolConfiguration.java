@@ -1,8 +1,8 @@
 package institute.hopesoftware;
 
-import static institute.hopesoftware.AbstractConfiguration.makeKey;
-import static institute.hopesoftware.AbstractConfiguration.readListStringsFromContext;
-import static institute.hopesoftware.AbstractConfiguration.readStringFromContext;
+import static institute.hopesoftware.ConfigurationUtilities.makeKey;
+import static institute.hopesoftware.ConfigurationUtilities.readListStringsFromContext;
+import static institute.hopesoftware.ConfigurationUtilities.readStringFromContext;
 
 import java.util.List;
 
@@ -37,13 +37,13 @@ public class UserPoolConfiguration {
     public static UserPoolConfiguration fromContextNode(Node node) throws Exception {
         UserPoolConfiguration userPoolConfiguration = new UserPoolConfiguration();
         
-        var enabled = AbstractConfiguration.readBooleanFromContext(node, KEY_ENABLED);
+        var enabled = ConfigurationUtilities.readBooleanFromContext(node, KEY_ENABLED);
         userPoolConfiguration.setEnabled(enabled);
                         
-        var selfSignUpEnabled = AbstractConfiguration.readBooleanFromContext(node, KEY_SELFSIGNUP_ENABLED);
+        var selfSignUpEnabled = ConfigurationUtilities.readBooleanFromContext(node, KEY_SELFSIGNUP_ENABLED);
         userPoolConfiguration.setSelfSignupEnabled(selfSignUpEnabled);
 
-        var googleLoginEnabled = AbstractConfiguration.readBooleanFromContext(node, KEY_GOOGLE_LOGIN_ENABLED);
+        var googleLoginEnabled = ConfigurationUtilities.readBooleanFromContext(node, KEY_GOOGLE_LOGIN_ENABLED);
         userPoolConfiguration.setGoogleLoginEnabled(googleLoginEnabled);
 
         if (userPoolConfiguration.isGoogleLoginEnabled()) {

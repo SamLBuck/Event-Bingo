@@ -1,9 +1,9 @@
 package institute.hopesoftware;
 
-import static institute.hopesoftware.AbstractConfiguration.makeKey;
-import static institute.hopesoftware.AbstractConfiguration.readBooleanFromContext;
-import static institute.hopesoftware.AbstractConfiguration.readIntFromContext;
-import static institute.hopesoftware.AbstractConfiguration.readStringFromContext;
+import static institute.hopesoftware.ConfigurationUtilities.makeKey;
+import static institute.hopesoftware.ConfigurationUtilities.readBooleanFromContext;
+import static institute.hopesoftware.ConfigurationUtilities.readIntFromContext;
+import static institute.hopesoftware.ConfigurationUtilities.readStringFromContext;
 
 import lombok.Data;
 import software.constructs.Node;

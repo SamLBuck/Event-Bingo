@@ -4,7 +4,7 @@ import java.util.List;
 
 import software.constructs.Node;
 
-public abstract class AbstractConfiguration {
+public class ConfigurationUtilities {
 
     protected static String makeKey(String rootKey, String... components) {
         StringBuffer buffer = new StringBuffer();

@@ -1,7 +1,7 @@
 package institute.hopesoftware;
 
-import static institute.hopesoftware.AbstractConfiguration.makeKey;
-import static institute.hopesoftware.AbstractConfiguration.readBooleanFromContext;
+import static institute.hopesoftware.ConfigurationUtilities.makeKey;
+import static institute.hopesoftware.ConfigurationUtilities.readBooleanFromContext;
 
 import lombok.Data;
 import software.constructs.Node;
