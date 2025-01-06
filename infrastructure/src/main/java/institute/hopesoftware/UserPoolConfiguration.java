@@ -48,7 +48,12 @@ public class UserPoolConfiguration {
 
         if (userPoolConfiguration.isGoogleLoginEnabled()) {
             String clientId = readStringFromContext(node, KEY_GOOGLE_CLIENT_ID);
-            Validations.requireNonEmpty(KEY_GOOGLE_CLIENT_ID, clientId);
+            try {
+                Validations.requireNonEmpty(KEY_GOOGLE_CLIENT_ID, clientId);
+            }
+            catch (IllegalArgumentException badClientId) {
+                throw new ConfigurationValueMissingException(KEY_GOOGLE_CLIENT_ID);
+            }
             userPoolConfiguration.setGoogleClientId(clientId);
             
             SecretValue googleClientSecret = SecretValue.secretsManager(KEY_GOOGLE_LOGIN_CLIENT_SECRET);
