@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import dev.stratospheric.cdk.ApplicationEnvironment;
@@ -63,8 +62,7 @@ public class ApplicationStack extends Stack {
     private UserPool userPool;
     private UserPoolClient userPoolClient;
     private Environment awsEnvironment;
-    private ApplicationEnvironment applicationEnvironment;
-    private Construct scope;
+    private ApplicationEnvironment applicationEnvironment;    
 
     private Network network;
     private NetworkInputParameters networkInputParameters;
@@ -86,13 +84,12 @@ public class ApplicationStack extends Stack {
             ServiceConfiguration serviceConfiguration,
             UserPoolConfiguration userPoolConfiguration,
             VpcConfiguration vpcConfiguration,                        
-            Set<ApplicationComponent> componentsToBuild, NetworkInputParameters networkInputParameters)
+            NetworkInputParameters networkInputParameters)
             throws Exception {
         super(scope, id, StackProps.builder()
                 .stackName(applicationEnvironment.prefix("Application"))
                 .env(awsEnvironment).build());
 
-        this.scope = scope;
         this.applicationEnvironment = applicationEnvironment;
         this.awsEnvironment = awsEnvironment;
         this.networkInputParameters = networkInputParameters;

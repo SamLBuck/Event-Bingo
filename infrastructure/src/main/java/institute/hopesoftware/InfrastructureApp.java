@@ -1,8 +1,5 @@
 package institute.hopesoftware;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import dev.stratospheric.cdk.ApplicationEnvironment;
 import dev.stratospheric.cdk.Network.NetworkInputParameters;
 import software.amazon.awscdk.App;
@@ -31,9 +28,7 @@ public class InfrastructureApp {
         Validations.requireNonEmpty(applicationName, "applicationName");
 
         String sslCertificateARN = (String) app.getNode().tryGetContext("sslCertificateARN");
-        Validations.requireNonEmpty(sslCertificateARN, "context variable 'sslCertificateARN' must not be null");
-
-        String dockerImageTag = (String) app.getNode().tryGetContext("dockerImageTag");
+        Validations.requireNonEmpty(sslCertificateARN, "context variable 'sslCertificateARN' must not be null");        
 
         Environment awsEnvironment = Environment
                 .builder()
@@ -44,8 +39,6 @@ public class InfrastructureApp {
         ApplicationEnvironment applicationEnvironment = new ApplicationEnvironment(applicationName, environmentName);
      
         FoundationStack foundationStack = new FoundationStack(app, "FoundationStack", awsEnvironment, applicationEnvironment, accountId);                
-
-        Set<ApplicationComponent> applicationComponents = new HashSet<ApplicationComponent> ();
 
         try {
             userPoolConfiguration = UserPoolConfiguration.fromContextNode(app.getNode());
@@ -91,7 +84,7 @@ public class InfrastructureApp {
                 serviceConfiguration, 
                 userPoolConfiguration,
                 vpcConfiguration,
-                applicationComponents, networkInputParameters
+                networkInputParameters
             );
 
             applicationStack.addDependency(foundationStack);
