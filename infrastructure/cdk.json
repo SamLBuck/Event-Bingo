@@ -13,16 +13,16 @@
     ]
   },
   "context": {
-    "applicationName": "sampleappmcfall",
+    "applicationName": "default",
     "region": "us-east-2",
-    "accountId": "890742562914",
+    "accountId": "default",
     "environmentName": "staging",
-    "awsProfile": "recipebook",
-    "sslCertificateARN": "arn:aws:acm:us-east-2:890742562914:certificate/34e2c20f-a025-475a-9e68-951680851d28",
+    "awsProfile": "default",
+    "sslCertificateARN": "default",
     "cognito.enabled" : false,
     "cognito.selfSignUpEnabled" : false,
     "cognito.googleLogin.enabled" : false,
-    "cognito.googleLogin.clientId" : "",
+    "cognito.googleLogin.clientId" : "default",
     "cognito.googleLogin.callbackUrls" : [],
     "cognito.googleLogin.logoutUrls" : [],
 
@@ -32,7 +32,7 @@
     "database.postgresVersion": "12.17",
     "database.dbInstanceClass": "db.t3.micro",
     "database.allocatedStorage": 20,
-    
+
     "service.enabled" : false,
     "service.dockerImageTag": 0,
     "service.desiredInstances": 1,

@@ -9,6 +9,21 @@ use File::Temp qw/ tempfile tempdir /;
 
 use Getopt::Long;
 
+my $compile_webapp = 1;
+my $compile_server = 1;
+my $build_docker_image = 1;
+my $show_help = 0;
+our @context_variables = ();
+
+GetOptions('webapp!' => \$compile_webapp, 'server!' => \$compile_server, 'build_docker_image!' => \$build_docker_image, 'context=s@' => \@context_variables, 'help' => \$show_help);
+
+if ($show_help) {
+    print "Usage: perl deploy.pl [--no-webapp] [--no-server] [--no-build_docker_image] [--help]\n\n";
+    print "Both the management web application and the backend API server will be built by default\n";
+    print "Use the --nowebapp and --no-server options to use an existing compiled version of those components\n";
+    exit (0);
+}
+
 my $root_dir = dirname(abs_path($0));
 my $server_dir = catfile($root_dir, "server");
 my $client_dir = catfile($root_dir, "web");
@@ -18,6 +33,7 @@ my $deploy_dir = catfile($root_dir, "infrastructure");
 my $accountId = read_value_from_cdk_json("accountId");
 my $region = read_value_from_cdk_json("region");
 my $awsProfile =  read_value_from_cdk_json("awsProfile");
+
 my $applicationName = read_value_from_cdk_json("applicationName");
 
 sub compile_webapp () {
@@ -49,6 +65,26 @@ sub compile_server () {
 }
 sub read_value_from_cdk_json () {
     my ($variableName) = @_;
+
+    #  Override values in cdk.json with those specified on the command line 
+    #  if present
+    my @values = grep (/$variableName/, @context_variables);
+
+    if (@values > 1) {
+        print STDERR "The value for $variableName was passed multiple times using --context; this is not allowed\n";
+        exit(1);
+    }
+    elsif (@values == 1) {                
+        if ($values[0] =~ /.*=(.*)/) {
+            return $1;
+        }
+        else {
+            print STDERR "Values passed for --context arguments should be in the form name=value\n";
+            print STDERR "You passed: $values[0]\n";
+            exit(1);
+        }
+    }
+
     my $cdk_json_path = catfile($deploy_dir, "cdk.json");
     open (my $cdk_json_file, $cdk_json_path)
         or die "Cannot open $cdk_json_path to read $variableName";
@@ -66,6 +102,11 @@ sub read_value_from_cdk_json () {
         die "context line $desiredLines[0] does not match expected pattern to read $variableName";
     }
 
+    if ($1 eq "default") {
+        print STDERR "The value of the property $variableName in cdk.json is still set to \"default\"\n";
+        print STDERR "You must change this to the appropriate value\n";
+        exit(1);
+    }
     return $1;
 }
 
@@ -215,21 +256,6 @@ sub update_load_balancer_name {
 
         print "Success\n";
     }
-}
-
-my $compile_webapp = 1;
-my $compile_server = 1;
-my $build_docker_image = 1;
-my $show_help = 0;
-our @context_variables = ();
-
-GetOptions('webapp!' => \$compile_webapp, 'server!' => \$compile_server, 'build_docker_image!' => \$build_docker_image, 'context=s@' => \@context_variables, 'help' => \$show_help);
-
-if ($show_help) {
-    print "Usage: perl deploy.pl [--no-webapp] [--no-server] [--no-build_docker_image] [--help]\n\n";
-    print "Both the management web application and the backend API server will be built by default\n";
-    print "Use the --nowebapp and --no-server options to use an existing compiled version of those components\n";
-    exit (0);
 }
 
 compile_webapp() unless (!$compile_webapp);
