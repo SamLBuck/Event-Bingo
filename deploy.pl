@@ -30,40 +30,7 @@ my $client_dir = catfile($root_dir, "web");
 my $webapp_dir = catfile($server_dir, "src", "main", "resources", "static", "app");
 my $deploy_dir = catfile($root_dir, "infrastructure");
 
-my $accountId = read_value_from_cdk_json("accountId");
-my $region = read_value_from_cdk_json("region");
-my $awsProfile =  read_value_from_cdk_json("awsProfile");
-
-my $applicationName = read_value_from_cdk_json("applicationName");
-
-sub compile_webapp () {
-    chdir ($client_dir)
-        or die "Could not change directories to the webapp folder ($client_dir)";
-    
-    my $flutter_cmd = "flutter build web --output $webapp_dir --base-href /app/";
-
-    print "Compiling web application to $webapp_dir ...";
-
-    `$flutter_cmd`;
-    unless ($? == 0) {
-        die "Failed to compile webapp project"
-    }
-
-    print "Success\n";
-}
-
-sub compile_server () {
-    chdir ($server_dir)
-        or die "Could not change directories to the server folder ($server_dir)";
-
-    print "Compiling api server project to $server_dir ... ";
-
-    `mvn package -DskipTests=true`;
-    die ("Failed to compile server") unless $? == 0;
-
-    print "Success\n";
-}
-sub read_value_from_cdk_json () {
+sub read_value_from_cdk_json ($) {
     my ($variableName) = @_;
 
     #  Override values in cdk.json with those specified on the command line 
@@ -108,6 +75,40 @@ sub read_value_from_cdk_json () {
         exit(1);
     }
     return $1;
+}
+
+my $accountId = read_value_from_cdk_json("accountId");
+my $region = read_value_from_cdk_json("region");
+my $awsProfile =  read_value_from_cdk_json("awsProfile");
+
+my $applicationName = read_value_from_cdk_json("applicationName");
+
+sub compile_webapp () {
+    chdir ($client_dir)
+        or die "Could not change directories to the webapp folder ($client_dir)";
+    
+    my $flutter_cmd = "flutter build web --output $webapp_dir --base-href /app/";
+
+    print "Compiling web application to $webapp_dir ...";
+
+    `$flutter_cmd`;
+    unless ($? == 0) {
+        die "Failed to compile webapp project"
+    }
+
+    print "Success\n";
+}
+
+sub compile_server () {
+    chdir ($server_dir)
+        or die "Could not change directories to the server folder ($server_dir)";
+
+    print "Compiling api server project to $server_dir ... ";
+
+    `mvn package -DskipTests=true`;
+    die ("Failed to compile server") unless $? == 0;
+
+    print "Success\n";
 }
 
 sub log_into_ecr () {    
