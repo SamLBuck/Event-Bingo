@@ -14,6 +14,7 @@ public class InfrastructureApp {
         UserPoolConfiguration userPoolConfiguration = null;
         DbConfiguration dbConfiguration = null;
         ServiceConfiguration serviceConfiguration = null;
+        VpcConfiguration vpcConfiguration = null;
 
         App app = new App();
 
@@ -72,10 +73,27 @@ public class InfrastructureApp {
         }
         
         try {
+            vpcConfiguration = VpcConfiguration.fromContextNode(app.getNode());
+        }
+        catch (Exception e) {
+            System.err.println("Exception reading VPC configuration: " + e.getMessage());
+            System.exit(1);
+        }
+
+        try {
             NetworkInputParameters networkInputParameters = 
                 new NetworkInputParameters().withSslCertificateArn(sslCertificateARN);
 
-            ApplicationStack applicationStack = new ApplicationStack(app, String.format("%s-application-stack", applicationName), awsEnvironment, applicationEnvironment, userPoolConfiguration, dbConfiguration, serviceConfiguration,applicationComponents, networkInputParameters);
+            String stackName = String.format("%s-application-stack", applicationName);
+            ApplicationStack applicationStack = new ApplicationStack(
+                app, stackName, awsEnvironment, applicationEnvironment, 
+                dbConfiguration, 
+                serviceConfiguration, 
+                userPoolConfiguration,
+                vpcConfiguration,
+                applicationComponents, networkInputParameters
+            );
+
             applicationStack.addDependency(foundationStack);
 
             app.synth();

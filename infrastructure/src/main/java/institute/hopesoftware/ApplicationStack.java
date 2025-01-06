@@ -76,14 +76,16 @@ public class ApplicationStack extends Stack {
     private UserPoolConfiguration userPoolConfiguration;
     private DbConfiguration dbConfiguration;
     private ServiceConfiguration serviceConfiguration;
+    private VpcConfiguration vpcConfiguration;
 
     public ApplicationStack(
             final Construct scope, final String id,
             final Environment awsEnvironment,
             final ApplicationEnvironment applicationEnvironment,
-            UserPoolConfiguration userPoolConfiguration,
             DbConfiguration dbConfiguration,
             ServiceConfiguration serviceConfiguration,
+            UserPoolConfiguration userPoolConfiguration,
+            VpcConfiguration vpcConfiguration,                        
             Set<ApplicationComponent> componentsToBuild, NetworkInputParameters networkInputParameters)
             throws Exception {
         super(scope, id, StackProps.builder()
@@ -95,15 +97,15 @@ public class ApplicationStack extends Stack {
         this.awsEnvironment = awsEnvironment;
         this.networkInputParameters = networkInputParameters;
         this.userPoolConfiguration = userPoolConfiguration;
+        this.vpcConfiguration = vpcConfiguration;
         this.dbConfiguration = dbConfiguration;
         this.serviceConfiguration = serviceConfiguration;
 
         if (userPoolConfiguration.isEnabled()) {
             setupCognito();
         }
-
-        VpcConfiguration vpcConfiguration = VpcConfiguration.fromContextNode(scope.getNode());
-        if (vpcConfiguration.isUseDefault()) {
+        
+        if (this.vpcConfiguration.isUseDefault()) {
 
         } else {
             network = createVpc();

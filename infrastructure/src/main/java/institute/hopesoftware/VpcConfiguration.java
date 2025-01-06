@@ -1,6 +1,7 @@
 package institute.hopesoftware;
 
-import java.util.Map;
+import static institute.hopesoftware.AbstractConfiguration.makeKey;
+import static institute.hopesoftware.AbstractConfiguration.readBooleanFromContext;
 
 import lombok.Data;
 import software.constructs.Node;
@@ -8,22 +9,19 @@ import software.constructs.Node;
 @Data
 public class VpcConfiguration {
     public static final String Key = "vpcConfiguration";
-    public static final String KEY_USE_DEFAULT = "useDefault";
+    public static final String KEY_USE_DEFAULT = makeKey(Key, "useDefault");
     private boolean useDefault = true;
 
     public VpcConfiguration() {
 
     }
 
-    public static VpcConfiguration fromContextNode(Node node) {
+    public static VpcConfiguration fromContextNode(Node node) throws ConfigurationTypeException, ConfigurationValueMissingException {
         VpcConfiguration vpcConfiguration = new VpcConfiguration();
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> configuration = (Map<String, Object>) node.tryGetContext(Key);
+        boolean useDefaultVPC = readBooleanFromContext(node, KEY_USE_DEFAULT);
 
-        vpcConfiguration.setUseDefault(
-            (boolean) configuration.computeIfAbsent(KEY_USE_DEFAULT, (k) -> true)
-        );
+        vpcConfiguration.setUseDefault(useDefaultVPC);
         return vpcConfiguration;
     }
 }

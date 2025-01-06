@@ -25,13 +25,14 @@
     "cognito.googleLogin.clientId" : "",
     "cognito.googleLogin.callbackUrls" : [],
     "cognito.googleLogin.logoutUrls" : [],
-    "vpcConfiguration": {
-      "useDefault": false
-    },
+
+    "vpcConfiguration.useDefault": false,
+
     "database.enabled": false,
     "database.postgresVersion": "12.17",
     "database.dbInstanceClass": "db.t3.micro",
     "database.allocatedStorage": 20,
+    
     "service.enabled" : false,
     "service.dockerImageTag": 0,
     "service.desiredInstances": 1,
