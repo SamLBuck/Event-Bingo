@@ -19,25 +19,25 @@
     "environmentName": "staging",
     "awsProfile": "recipebook",
     "sslCertificateARN": "arn:aws:acm:us-east-2:890742562914:certificate/34e2c20f-a025-475a-9e68-951680851d28",
-    "userPoolConfiguration": {
-      "enabled": false,
-      "selfSignUpEnabled": true,
-      "googleLoginConfiguration": {
-        "enabled": false,
-        "clientId": "default"
-      },
-      "callbackUrls": [],
-      "logoutUrls": []
-    },
+    "cognito.enabled" : false,
+    "cognito.selfSignUpEnabled" : false,
+    "cognito.googleLogin.enabled" : false,
+    "cognito.googleLogin.clientId" : "",
+    "cognito.googleLogin.callbackUrls" : [],
+    "cognito.googleLogin.logoutUrls" : [],
     "vpcConfiguration": {
       "useDefault": false
     },
-    "dbConfiguration": {
-      "enabled": false,
-      "postgresVersion": "12.17",
-      "dbInstanceClass": "db.t3.micro",
-      "allocatedStorage": 20
-    },
+    "database.enabled": false,
+    "database.postgresVersion": "12.17",
+    "database.dbInstanceClass": "db.t3.micro",
+    "database.allocatedStorage": 20,
+    "service.enabled" : false,
+    "service.dockerImageTag": 0,
+    "service.desiredInstances": 1,
+    "service.healthCheck.path": "/actuator/health",
+    "service.healthCheck.port": 8080,
+
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/core:target-partitions": [

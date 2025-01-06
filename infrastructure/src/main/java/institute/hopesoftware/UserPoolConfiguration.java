@@ -1,22 +1,29 @@
 package institute.hopesoftware;
 
+import static institute.hopesoftware.AbstractConfiguration.makeKey;
+import static institute.hopesoftware.AbstractConfiguration.readListStringsFromContext;
+import static institute.hopesoftware.AbstractConfiguration.readStringFromContext;
+
 import java.util.List;
-import java.util.Map;
 
 import lombok.Data;
 import software.amazon.awscdk.SecretValue;
 import software.constructs.Node;
-
 @Data
 public class UserPoolConfiguration {
-    public static final String Key = "userPoolConfiguration";
-    public static final String KEY_ENABLED = "enabled";
-    public static final String KEY_GOOGLE_LOGIN_CONFIGURATION = "googleLoginConfiguration";
+    public static final String Key = "cognito";
+    public static final String KEY_ENABLED = makeKey(Key, "enabled");    
+    public static final String KEY_SELFSIGNUP_ENABLED = makeKey(Key,"selfSignUpEnabled");
+
+    public static final String KEY_GOOGLE_LOGIN_CONFIGURATION = makeKey(Key, "googleLogin");
+    public static final String KEY_GOOGLE_LOGIN_ENABLED = makeKey(KEY_GOOGLE_LOGIN_CONFIGURATION, "enabled");
+
     public static final String KEY_GOOGLE_LOGIN_CLIENT_SECRET = "google/login/clientSecret";
-    public static final String KEY_GOOGLE_CLIENT_ID = "clientId";
-    public static final String KEY_SELFSIGNIN_ENABLED = "selfSignUpEnabled";
-    public static final String KEY_CALLBACK_URLS = "callbackUrls";
-    public static final String KEY_LOGOUT_URLS = "logoutUrls";
+    public static final String KEY_GOOGLE_CLIENT_ID = makeKey(KEY_GOOGLE_LOGIN_CONFIGURATION, "clientId");
+
+    public static final String KEY_CALLBACK_URLS = makeKey(KEY_GOOGLE_LOGIN_CONFIGURATION, "callbackUrls");
+    public static final String KEY_LOGOUT_URLS = makeKey(KEY_GOOGLE_LOGIN_CONFIGURATION, "logoutUrls");
+
     private boolean enabled;
 
     private boolean googleLoginEnabled;
@@ -29,49 +36,30 @@ public class UserPoolConfiguration {
     
     public static UserPoolConfiguration fromContextNode(Node node) throws Exception {
         UserPoolConfiguration userPoolConfiguration = new UserPoolConfiguration();
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> configuration = (Map<String, Object>) node.tryGetContext(Key);
-        var enabled = (Boolean) configuration.get(KEY_ENABLED);
+        
+        var enabled = AbstractConfiguration.readBooleanFromContext(node, KEY_ENABLED);
         userPoolConfiguration.setEnabled(enabled);
+                        
+        var selfSignUpEnabled = AbstractConfiguration.readBooleanFromContext(node, KEY_SELFSIGNUP_ENABLED);
+        userPoolConfiguration.setSelfSignupEnabled(selfSignUpEnabled);
 
-        userPoolConfiguration.setSelfSignupEnabled((Boolean) configuration.getOrDefault(KEY_SELFSIGNIN_ENABLED, true));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> googleLoginConfiguration = (Map<String, Object>) configuration.get(KEY_GOOGLE_LOGIN_CONFIGURATION);
-        userPoolConfiguration.setGoogleLoginEnabled((Boolean) googleLoginConfiguration.getOrDefault("enabled", false));
+        var googleLoginEnabled = AbstractConfiguration.readBooleanFromContext(node, KEY_GOOGLE_LOGIN_ENABLED);
+        userPoolConfiguration.setGoogleLoginEnabled(googleLoginEnabled);
 
         if (userPoolConfiguration.isGoogleLoginEnabled()) {
-            String clientId = (String) googleLoginConfiguration.getOrDefault(KEY_GOOGLE_CLIENT_ID, "");
+            String clientId = readStringFromContext(node, KEY_GOOGLE_CLIENT_ID);
             Validations.requireNonEmpty(KEY_GOOGLE_CLIENT_ID, clientId);
             userPoolConfiguration.setGoogleClientId(clientId);
             
             SecretValue googleClientSecret = SecretValue.secretsManager(KEY_GOOGLE_LOGIN_CLIENT_SECRET);
             userPoolConfiguration.setGoogleClientSecret(googleClientSecret);           
-        }
-
-        Object callbackUrls = configuration.get(KEY_CALLBACK_URLS);
-        try {
-            @SuppressWarnings("unchecked")
-            List<String> callbackUrlsAsStrings = (List<String>) callbackUrls;
-            userPoolConfiguration.setCallbackUrls(callbackUrlsAsStrings);
-        }
-        catch (ClassCastException invalidCallbackURLs) {
-            throw new Exception(String.format("The value provided in cdk.json for the key %s is not a list of strings.", KEY_CALLBACK_URLS));
-        }
         
-        Object logoutUrls = configuration.get(KEY_LOGOUT_URLS);
-        try {
-            @SuppressWarnings("unchecked")
-            List<String> logoutUrlsAsStrings = (List<String>) logoutUrls;
-            userPoolConfiguration.setLogoutUrls(logoutUrlsAsStrings);
+            List<String> callbackUrls = readListStringsFromContext(node, KEY_CALLBACK_URLS);
+            userPoolConfiguration.setCallbackUrls(callbackUrls);
+            
+            List<String> logoutUrls = readListStringsFromContext(node, KEY_LOGOUT_URLS);
+            userPoolConfiguration.setLogoutUrls(logoutUrls);
         }
-        catch (ClassCastException invalidLogoutUrls) {
-            throw new Exception(String.format("The value provided in cdk.json for the key %s is not a list of strings", KEY_LOGOUT_URLS));
-        }
-
         return userPoolConfiguration;
     }
-
-    
 }

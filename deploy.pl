@@ -159,7 +159,10 @@ sub bootstrap_cdk_environment() {
 sub run_cdk_deploy {
     chdir ($deploy_dir);
     my ($tag) = @_;
-    my $cdk_command = "cdk deploy --all --context dockerImageTag=$tag --profile $awsProfile  --require-approval never";
+    my $cdk_command = "cdk deploy --all --context service.dockerImageTag=$tag --profile $awsProfile  --require-approval never";
+    for my $context_argument (@main::context_variables) {
+        $cdk_command .= " --context $context_argument";
+    }
     `$cdk_command`;
 
     if ($? != 0) {
@@ -178,13 +181,14 @@ sub create_dns_update_doc {
     my $output_doc = "";
     for my $line (@lines) {
         $line =~ s/DNS_RECORD/$load_balancer_dns_name/;
+        $line =~ s/projectname/$awsProfile/;
         $output_doc .= $line;
     } 
     return $output_doc;
 }
 
 sub update_load_balancer_name {
-    my $cmd = "aws elbv2 describe-load-balancers --names staging-loadbalancer --profile parkhope";
+    my $cmd = "aws elbv2 describe-load-balancers --names staging-loadbalancer --profile $awsProfile";
     my $load_balancer_info =  `$cmd`;
 
     if ($? != 0) {
@@ -202,7 +206,7 @@ sub update_load_balancer_name {
 
         my $update_dns_cmd = "aws route53 change-resource-record-sets --profile computerscience --hosted-zone-id $hosted_zone_id --change-batch file://$filename";
 
-        print "Updating the DNS record for parkhope.hopesoftware.institute ... ";
+        print "Updating the DNS record for $awsProfile.hopesoftware.institute ... ";
         my $update_output = `$update_dns_cmd`;
 
         if ($? != 0) {
@@ -217,8 +221,9 @@ my $compile_webapp = 1;
 my $compile_server = 1;
 my $build_docker_image = 1;
 my $show_help = 0;
+our @context_variables = ();
 
-GetOptions('webapp!' => \$compile_webapp, 'server!' => \$compile_server, 'build_docker_image!' => \$build_docker_image, 'help' => \$show_help);
+GetOptions('webapp!' => \$compile_webapp, 'server!' => \$compile_server, 'build_docker_image!' => \$build_docker_image, 'context=s@' => \@context_variables, 'help' => \$show_help);
 
 if ($show_help) {
     print "Usage: perl deploy.pl [--no-webapp] [--no-server] [--no-build_docker_image] [--help]\n\n";
@@ -226,7 +231,6 @@ if ($show_help) {
     print "Use the --nowebapp and --no-server options to use an existing compiled version of those components\n";
     exit (0);
 }
-
 
 compile_webapp() unless (!$compile_webapp);
 compile_server() unless (!$compile_server);
@@ -239,7 +243,7 @@ log_into_ecr();
 my $docker_image_tag = build_and_push_docker_image($build_docker_image)
   unless (!$build_docker_image);
 
-# run_cdk_deploy($docker_image_tag);
+run_cdk_deploy($docker_image_tag);
 
-# update_load_balancer_name();
+update_load_balancer_name();
 

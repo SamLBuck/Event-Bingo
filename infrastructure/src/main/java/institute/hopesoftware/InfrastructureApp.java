@@ -1,7 +1,6 @@
 package institute.hopesoftware;
 
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import dev.stratospheric.cdk.ApplicationEnvironment;
@@ -11,7 +10,11 @@ import software.amazon.awscdk.Environment;
 import software.amazon.jsii.JsiiError;
 
 public class InfrastructureApp {
-    public static void main(final String[] args) {
+    public static void main(final String[] args) {    
+        UserPoolConfiguration userPoolConfiguration = null;
+        DbConfiguration dbConfiguration = null;
+        ServiceConfiguration serviceConfiguration = null;
+
         App app = new App();
 
         String accountId = (String) app.getNode().tryGetContext("accountId");
@@ -43,27 +46,36 @@ public class InfrastructureApp {
 
         Set<ApplicationComponent> applicationComponents = new HashSet<ApplicationComponent> ();
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> userPoolConfiguration = (Map<String, Object>) app.getNode().tryGetContext("userPoolConfiguration");
-
-        boolean buildUserPool = (Boolean) userPoolConfiguration.getOrDefault("enabled", false);
-
-        if (buildUserPool) {
-            applicationComponents.add(ApplicationComponent.COGNITO_USER_POOL);
+        try {
+            userPoolConfiguration = UserPoolConfiguration.fromContextNode(app.getNode());
+            System.err.println(String.format("Enabled is %s from within InfrastructureApp user pool configuration", userPoolConfiguration.isEnabled()));
+        }
+        catch (Exception e) {
+            System.err.println("Exception reading user pool configuration: " + e.getMessage());
+            System.exit(1);
         }
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> dbConfiguration = (Map<String, Object>) app.getNode().tryGetContext(DbConfiguration.Key);
-        boolean buildDb = (Boolean) dbConfiguration.getOrDefault(DbConfiguration.KEY_ENABLED, false);
-        if (buildDb) {
-            applicationComponents.add(ApplicationComponent.POSTGRES_DATABASE);
+        try {
+            dbConfiguration = DbConfiguration.fromContextNode(app.getNode());
+        }
+        catch (Exception e) {
+            System.err.println("Exception reading database configuration: " + e.getMessage());
+            System.exit(1);
+        }
+
+        try {
+            serviceConfiguration = ServiceConfiguration.fromContextNode(app.getNode());
+        }
+        catch (Exception e) {
+            System.err.println("Exception reading service configuration: " + e.getMessage());
+            System.exit(1);
         }
         
         try {
             NetworkInputParameters networkInputParameters = 
                 new NetworkInputParameters().withSslCertificateArn(sslCertificateARN);
 
-            ApplicationStack applicationStack = new ApplicationStack(app, String.format("%s-application-stack", applicationName), awsEnvironment, applicationEnvironment, applicationComponents, networkInputParameters);
+            ApplicationStack applicationStack = new ApplicationStack(app, String.format("%s-application-stack", applicationName), awsEnvironment, applicationEnvironment, userPoolConfiguration, dbConfiguration, serviceConfiguration,applicationComponents, networkInputParameters);
             applicationStack.addDependency(foundationStack);
 
             app.synth();
