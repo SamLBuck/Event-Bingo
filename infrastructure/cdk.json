@@ -28,12 +28,12 @@
 
     "vpcConfiguration.useDefault": false,
 
-    "database.enabled": false,
+    "database.enabled": true,
     "database.postgresVersion": "12.17",
     "database.dbInstanceClass": "db.t3.micro",
     "database.allocatedStorage": 20,
 
-    "service.enabled" : false,
+    "service.enabled" : true,
     "service.dockerImageTag": 0,
     "service.desiredInstances": 1,
     "service.healthCheck.path": "/actuator/health",
