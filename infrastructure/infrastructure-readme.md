@@ -8,11 +8,10 @@ The file `infrastructure/cdk.json` contains several properties that must be edit
 ### Properties needed for all projects
 
 * **awsProfile**:  the name of an AWS profile containing an AWS *access key* and *secret access key*.  Information about creating an AWS profile with the required information can be found in the [HSI Project Docmentation](https://faculty.hope.edu/mcfall/courses/481/documentation/index.html).  
-The credentials can be found in the appropriate folder within [this Google Drive folder](https://drive.google.com/drive/folders/1y0TXEoYMPLFyO8qalsXcuwupME8MEccj?usp=drive_link)
-* **accountId**:  the account ID for the AWS account associated with the account.  This information can also be found in the appropriate folder within [this Google Drive folder](https://drive.google.com/drive/folders/1y0TXEoYMPLFyO8qalsXcuwupME8MEccj?usp=drive_link)
+The credentials can be found a Google Drive Folder for the project that should be shared with the project team members.
+* **accountId**:  the account ID for the AWS account associated with the account.  This information can also be found in Google Drive folder for the project.
 * **applicationName**:  the value for this property should be a descriptive name for the project, with no spaces or special characters.  It will be used to build names for the various AWS artifacts.
-* **sslCertificateARN**:  the unique AWS identifier for the SSL certificate associated with the project.  Instructions for creating this certificate are available as part of the [HSI Project Documentation](https://faculty.hope.edu/mcfall/courses/481/documentation/index.html)
-* **
+* **sslCertificateARN**:  the unique AWS identifier for the SSL certificate associated with the project.  The value should be available in the Google Drive folder for the project.
 
 ### Specifying which AWS resources to deploy
 Currently the project template supports the AWS resource types described below.
@@ -24,7 +23,7 @@ To specify that a Cognito User Pool should be included when deploying a project,
 
 Properties starting with `cognito.googleLogin` are used if the application should allow sign-in using Google single sign on.  Several subproperties must then be configured:
 
-* **cognito.googleLogin.clientId**:  Specifies the Client ID associated with a Google Cloud Platform project.  This project must be created separately using [the documentation provided here]((https://faculty.hope.edu/mcfall/courses/481/documentation/index.html)).
+* **cognito.googleLogin.clientId**:  Specifies the Client ID associated with a Google Cloud Platform project.  This project must be created separately using [the documentation provided here]((https://faculty.hope.edu/mcfall/courses/481/documentation/index.html)); a faculty or staff member will generally create this project and provide the client ID in the Google Drive folder for the project.
 * **cognito.googleLogin.callbackUrls**:  This is an array of strings specifying allowable callback URLs.  Documentation to be provided later on what values to put here.
 * **cognito.googleLogin.logoutUrls**:  This is an array of strings specifying allowable logout URLs.  Documentation to be provided later on what values to put here.
 
