@@ -1,3 +1,9 @@
+Make sure there are instructions on creating an AWS profile before doing anything else
+
+Add the account ID for AWS into the Google Docs docments with the client ID and other AWS information
+
+Add a note to make sure that they update aws-cli and amplify before getting started
+
 #  Overview
 
 Infrastructure for Hope Software Institute projects is hosted on AWS.  Projects specify the AWS services they required using the Java version of the Cloud Development Kit (CDK).  Most projects use the infrastructure from the HSI project template.
@@ -7,10 +13,10 @@ The file `infrastructure/cdk.json` contains several properties that must be edit
 
 ### Properties needed for all projects
 
+* **applicationName**:  the value for this property should be a descriptive name for the project, with no spaces or special characters.  It will be used to build names for the various AWS artifacts.
 * **awsProfile**:  the name of an AWS profile containing an AWS *access key* and *secret access key*.  Information about creating an AWS profile with the required information can be found in the [HSI Project Docmentation](https://faculty.hope.edu/mcfall/courses/481/documentation/index.html).  
 The credentials can be found a Google Drive Folder for the project that should be shared with the project team members.
 * **accountId**:  the account ID for the AWS account associated with the account.  This information can also be found in Google Drive folder for the project.
-* **applicationName**:  the value for this property should be a descriptive name for the project, with no spaces or special characters.  It will be used to build names for the various AWS artifacts.
 * **sslCertificateARN**:  the unique AWS identifier for the SSL certificate associated with the project.  The value should be available in the Google Drive folder for the project.
 
 ### Specifying which AWS resources to deploy
@@ -21,11 +27,15 @@ A User Pool is a resource dedicated to managing users and groups for an applicat
 
 To specify that a Cognito User Pool should be included when deploying a project,  the property `cognito.enabled` should be given a value of **true**.  The `cognito.selfSignUpEnabled` property controls whether users have the ability to sign up for an account on their own.  
 
-Properties starting with `cognito.googleLogin` are used if the application should allow sign-in using Google single sign on.  Several subproperties must then be configured:
+Properties starting with `cognito.googleLogin` are used if the application should allow sign-in using Google authentication.  Several subproperties must then be configured:
 
 * **cognito.googleLogin.clientId**:  Specifies the Client ID associated with a Google Cloud Platform project.  This project must be created separately using [the documentation provided here]((https://faculty.hope.edu/mcfall/courses/481/documentation/index.html)); a faculty or staff member will generally create this project and provide the client ID in the Google Drive folder for the project.
-* **cognito.googleLogin.callbackUrls**:  This is an array of strings specifying allowable callback URLs.  Documentation to be provided later on what values to put here.
-* **cognito.googleLogin.logoutUrls**:  This is an array of strings specifying allowable logout URLs.  Documentation to be provided later on what values to put here.
+* **cognito.googleLogin.callbackUrls**:  This is an array of strings specifying allowable callback URLs.
+  * **Flutter app**:  Include a URL like `"scheme://callback"` in the list of values for this property.  The value of *scheme* should be something that uniquely identifies the app.
+  * **Web app**:  To be completed
+* **cognito.googleLogin.logoutUrls**:  This is an array of strings specifying allowable logout URLs.
+  * **Flutter app**: Include a URL like `"scheme://logout"` in the list of values for this property.  The value of *scheme* should be the same as the value used in the `cognito.googleLogin.callbackUrls` property.
+  * **Web app**:  To be completed
 
 #### Virtual Private Cloud (VPC)
 A VPC allows servers you deploy as part of your infrastructure to communicate with each other. This would include your database server and the server hosting your backend / web application, for example.
