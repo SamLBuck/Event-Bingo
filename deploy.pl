@@ -12,13 +12,17 @@ use Getopt::Long;
 my $compile_webapp = 1;
 my $compile_server = 1;
 my $build_docker_image = 1;
+my $update_load_balancer_dns = 1;
+
 my $show_help = 0;
 our @context_variables = ();
 
-GetOptions('webapp!' => \$compile_webapp, 'server!' => \$compile_server, 'build_docker_image!' => \$build_docker_image, 'context=s@' => \@context_variables, 'help' => \$show_help);
+GetOptions('webapp!' => \$compile_webapp, 'server!' => \$compile_server, 
+    'update-dns!' => \$update_load_balancer_dns,
+    'build_docker_image!' => \$build_docker_image, 'context=s@' => \@context_variables, 'help' => \$show_help);
 
 if ($show_help) {
-    print "Usage: perl deploy.pl [--no-webapp] [--no-server] [--no-build_docker_image] [--help]\n\n";
+    print "Usage: perl deploy.pl [--no-webapp] [--no-server] [--no-build_docker_image] [--no-update-dns] [--help]\n\n";
     print "Both the management web application and the backend API server will be built by default\n";
     print "Use the --nowebapp and --no-server options to use an existing compiled version of those components\n";
     exit (0);
@@ -179,11 +183,15 @@ sub build_foundation_stack() {
     chdir($deploy_dir);
     my $cdk_command = "cdk deploy FoundationStack --context dockerImageTag=latest --profile $awsProfile --require-approval never";
 
+    for my $context_argument (@main::context_variables) {
+        $cdk_command .= " --context $context_argument";
+    
+    }
     print "Building foundation stack ... ";
-    `$cdk_command`;
+    my $output = `$cdk_command`;
 
     if ($? != 0) {
-        die "Error deploying foundation stack: $cdk_command";
+        die "Error deploying foundation stack: $cdk_command\n$output\n";
     }
     print "Success\n";
 }
@@ -191,10 +199,16 @@ sub build_foundation_stack() {
 sub bootstrap_cdk_environment() {
     chdir ($deploy_dir);
     my $cdk_command = "cdk bootstrap --profile $awsProfile";
-    `$cdk_command`;
+    for my $context_argument (@main::context_variables) {
+        $cdk_command .= " --context $context_argument";
+    }
+
+    my $output = `$cdk_command`;
 
     if ($? != 0) {
-        die "Error running cdk deploy command: $cdk_command";
+        print "Error running cdk deploy command: $cdk_command\n";
+        print "$output\n";
+        die;
     }
 }
 
@@ -272,5 +286,6 @@ my $docker_image_tag = build_and_push_docker_image($build_docker_image)
 
 run_cdk_deploy($docker_image_tag);
 
-update_load_balancer_name();
+update_load_balancer_name()
+    unless (!$update_load_balancer_dns);
 

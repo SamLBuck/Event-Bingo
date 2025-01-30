@@ -25,6 +25,7 @@
     "cognito.googleLogin.clientId" : "default",
     "cognito.googleLogin.callbackUrls" : [],
     "cognito.googleLogin.logoutUrls" : [],
+    "cognito.groups": [],
 
     "vpcConfiguration.useDefault": false,
 

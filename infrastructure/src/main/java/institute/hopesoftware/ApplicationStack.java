@@ -22,6 +22,7 @@ import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.cognito.AccountRecovery;
 import software.amazon.awscdk.services.cognito.AttributeMapping;
 import software.amazon.awscdk.services.cognito.AutoVerifiedAttrs;
+import software.amazon.awscdk.services.cognito.CfnUserPoolGroup;
 import software.amazon.awscdk.services.cognito.CognitoDomainOptions;
 import software.amazon.awscdk.services.cognito.Mfa;
 import software.amazon.awscdk.services.cognito.OAuthFlows;
@@ -229,6 +230,17 @@ public class ApplicationStack extends Stack {
 
         if (userPoolConfiguration.isGoogleLoginEnabled()) {
             this.userPoolClient.getNode().addDependency(provider);
+        }
+
+        for (String groupName: userPoolConfiguration.getGroupNames()) {
+            CfnUserPoolGroup group = CfnUserPoolGroup.Builder.create(
+                this, 
+                String.format("%s-group-%s", applicationName, groupName)
+            )
+            .userPoolId(userPool.getUserPoolId())
+            .groupName(groupName)
+            .build();
+            group.getNode().addDependency(userPool);
         }
     }
 

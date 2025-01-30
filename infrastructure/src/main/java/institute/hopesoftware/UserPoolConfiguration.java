@@ -24,6 +24,8 @@ public class UserPoolConfiguration {
     public static final String KEY_CALLBACK_URLS = makeKey(KEY_GOOGLE_LOGIN_CONFIGURATION, "callbackUrls");
     public static final String KEY_LOGOUT_URLS = makeKey(KEY_GOOGLE_LOGIN_CONFIGURATION, "logoutUrls");
 
+    public static final String KEY_GROUP_NAMES = makeKey(Key, "groups");
+
     private boolean enabled;
 
     private boolean googleLoginEnabled;
@@ -34,6 +36,8 @@ public class UserPoolConfiguration {
     private List<String> callbackUrls;
     private List<String> logoutUrls;
     
+    private List<String> groupNames;
+
     public static UserPoolConfiguration fromContextNode(Node node) throws Exception {
         UserPoolConfiguration userPoolConfiguration = new UserPoolConfiguration();
         
@@ -42,6 +46,9 @@ public class UserPoolConfiguration {
                         
         var selfSignUpEnabled = ConfigurationUtilities.readBooleanFromContext(node, KEY_SELFSIGNUP_ENABLED);
         userPoolConfiguration.setSelfSignupEnabled(selfSignUpEnabled);
+
+        var groupNames = ConfigurationUtilities.readListStringsFromContext(node, KEY_GROUP_NAMES);
+        userPoolConfiguration.setGroupNames(groupNames);
 
         var googleLoginEnabled = ConfigurationUtilities.readBooleanFromContext(node, KEY_GOOGLE_LOGIN_ENABLED);
         userPoolConfiguration.setGoogleLoginEnabled(googleLoginEnabled);
