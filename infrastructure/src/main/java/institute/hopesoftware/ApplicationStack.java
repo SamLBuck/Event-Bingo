@@ -45,6 +45,8 @@ import software.amazon.awscdk.services.ecs.CfnTaskDefinition;
 import software.amazon.awscdk.services.elasticloadbalancingv2.CfnListenerRule;
 import software.amazon.awscdk.services.elasticloadbalancingv2.CfnTargetGroup;
 import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.IManagedPolicy;
+import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyDocument;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
@@ -330,8 +332,6 @@ public class ApplicationStack extends Stack {
             vars.put("SPRING_DATASOURCE_PASSWORD", dbPassword);
         }
 
-        System.err.println("In ApplicationStack, dockerImageTag is " + serviceConfiguration.getDockerImageTag());
-
         DockerImageSource dockerImageSource = new DockerImageSource(applicationEnvironment.getApplicationName(), serviceConfiguration.getDockerImageTag());
 
         List<CfnTargetGroup.TargetGroupAttributeProperty> deregistrationDelayConfiguration = List.of(
@@ -422,10 +422,14 @@ public class ApplicationStack extends Stack {
             )
         .build();
 
+        //  Allow the task to access Cognition so Spring components can manage information within 
+        //  the user pool
+        IManagedPolicy cognitoPowerUser = ManagedPolicy.fromAwsManagedPolicyName("AmazonCognitoPowerUser");
         Role.Builder roleBuilder = Role.Builder.create(this, "ecsTaskRole")
             .assumedBy(
                 ServicePrincipal.Builder.create("ecs-tasks.amazonaws.com").build()
             )
+            .managedPolicies(Arrays.asList(cognitoPowerUser))
             .path("/");
 
         Role ecsTaskRole = roleBuilder.build();
@@ -443,8 +447,6 @@ public class ApplicationStack extends Stack {
             dockerRepositoryUrl = dockerImageSource.getDockerImageUrl();
         }
 
-        System.err.println("Docker Repository URL is " + dockerRepositoryUrl);
-        
         CfnTaskDefinition.ContainerDefinitionProperty container = CfnTaskDefinition.ContainerDefinitionProperty
             .builder()
             .name(containerName(applicationEnvironment))
