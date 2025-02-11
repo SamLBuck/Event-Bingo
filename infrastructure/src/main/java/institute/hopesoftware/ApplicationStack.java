@@ -53,6 +53,7 @@ import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
+import software.amazon.awscdk.services.pinpoint.CfnApp;
 import software.amazon.awscdk.services.rds.CfnDBInstance;
 import software.amazon.awscdk.services.rds.CfnDBSubnetGroup;
 import software.amazon.awscdk.services.secretsmanager.CfnSecretTargetAttachment;
@@ -115,6 +116,11 @@ public class ApplicationStack extends Stack {
             createPostgresDatabase();
         }
 
+        CfnApp pinpointApp = CfnApp.Builder
+            .create(this, "pinpoint-app")
+            .name(applicationEnvironment.prefix("pinpoint-app"))
+            .build();
+            
         if (serviceConfiguration.isEnabled()) {
             createService();
         }
