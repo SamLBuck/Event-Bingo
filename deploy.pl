@@ -109,8 +109,8 @@ sub compile_server () {
 
     print "Compiling api server project to $server_dir ... ";
 
-    `mvn package -DskipTests=true`;
-    die ("Failed to compile server") unless $? == 0;
+    my $output = `mvn package -DskipTests=true`;
+    die ("Failed to compile server: $output") unless $? == 0;
 
     print "Success\n";
 }
