@@ -30,7 +30,7 @@
     "vpcConfiguration.useDefault": false,
 
     "database.enabled": true,
-    "database.postgresVersion": "12.17",
+    "database.postgresVersion": "16.3",
     "database.dbInstanceClass": "db.t3.micro",
     "database.allocatedStorage": 20,
 
