@@ -40,6 +40,8 @@
     "service.healthCheck.path": "/actuator/health",
     "service.healthCheck.port": 8080,
 
+    "compile.webapp": false,
+
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/core:target-partitions": [

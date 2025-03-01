@@ -9,7 +9,13 @@ use File::Temp qw/ tempfile tempdir /;
 
 use Getopt::Long;
 
-my $compile_webapp = 1;
+my $root_dir = dirname(abs_path($0));
+my $server_dir = catfile($root_dir, "server");
+my $client_dir = catfile($root_dir, "web");
+my $webapp_dir = catfile($server_dir, "src", "main", "resources", "static", "app");
+my $deploy_dir = catfile($root_dir, "infrastructure");
+
+my $compile_webapp = -1;
 my $compile_server = 1;
 my $build_docker_image = 1;
 my $update_load_balancer_dns = 1;
@@ -27,12 +33,6 @@ if ($show_help) {
     print "Use the --nowebapp and --no-server options to use an existing compiled version of those components\n";
     exit (0);
 }
-
-my $root_dir = dirname(abs_path($0));
-my $server_dir = catfile($root_dir, "server");
-my $client_dir = catfile($root_dir, "web");
-my $webapp_dir = catfile($server_dir, "src", "main", "resources", "static", "app");
-my $deploy_dir = catfile($root_dir, "infrastructure");
 
 sub read_value_from_cdk_json ($) {
     my ($variableName) = @_;
@@ -73,12 +73,19 @@ sub read_value_from_cdk_json ($) {
         die "context line $desiredLines[0] does not match expected pattern to read $variableName";
     }
 
-    if ($1 eq "default") {
+    my $value = $1;
+    $value =~ s/,$//;
+    if ($value eq "default") {
         print STDERR "The value of the property $variableName in cdk.json is still set to \"default\"\n";
         print STDERR "You must change this to the appropriate value\n";
         exit(1);
     }
-    return $1;
+    return $value;
+}
+
+if  ($compile_webapp == -1) {
+    $compile_webapp = read_value_from_cdk_json("compile.webapp");
+    $compile_webapp = $compile_webapp eq "false" ? 0 : 1;
 }
 
 my $accountId = read_value_from_cdk_json("accountId");
@@ -244,7 +251,20 @@ sub create_dns_update_doc {
 }
 
 sub update_load_balancer_name {
-    my $cmd = "aws elbv2 describe-load-balancers --names staging-loadbalancer --profile $awsProfile";
+    my $list_profiles_cmd = "aws configure list-profiles";
+    my $profile_output = `$list_profiles_cmd`;
+    my $dns_update_profile = "updatedns";
+
+    chomp ($profile_output);
+
+    my @profiles = split /\n/, $profile_output;
+    my @found_profiles = grep /$dns_update_profile/, @profiles;
+    if (@found_profiles == 0) {
+        print STDERR "Did not find an AWS profile named $dns_update_profile\n";
+        print STDERR "Create this profile using the information in "
+    }
+
+    my $cmd = "aws elbv2 describe-load-balancers --names staging-loadbalancer --profile $dns_update_profile";
     my $load_balancer_info =  `$cmd`;
 
     if ($? != 0) {
