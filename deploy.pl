@@ -8,6 +8,7 @@ use File::Copy;
 use File::Temp qw/ tempfile tempdir /;
 
 use Getopt::Long;
+use JSON;
 
 my $root_dir = dirname(abs_path($0));
 my $server_dir = catfile($root_dir, "server");
@@ -133,30 +134,56 @@ sub log_into_ecr () {
     print "Success\n";
 }
 
+sub get_next_image_tag {
+    print "Retrieving existing docker image tags from ECR repository ...";
+
+    my $applicationName = read_value_from_cdk_json("applicationName");
+    my $region = read_value_from_cdk_json("region");
+    my $awsProfile = read_value_from_cdk_json("awsProfile");
+    
+    my $list_remote_images_cmd = "aws ecr list-images --repository-name $applicationName --region $region --profile $awsProfile";
+    my $list_remote_images_output = `$list_remote_images_cmd`;
+    if ($? != 0) {
+        die "\nFailed to list images in remote AWS ECR repository using command: $list_remote_images_cmd";
+    }
+    
+    my $json = decode_json($list_remote_images_output);
+    my @imageTags = sort {$b <=> $a} map { $_->{imageTag} } @{$json->{imageIds}};   
+
+    print (" Success\n");
+    return @imageTags == 0 ? 1 : $imageTags[0]+1;
+}
+
+sub delete_existing_docker_image {
+    my ($tag) = @_;
+
+    my $applicationName = read_value_from_cdk_json("applicationName");
+    my $region = read_value_from_cdk_json("region");
+    my $awsProfile = read_value_from_cdk_json("awsProfile");
+    
+    print "Deleting existing docker image with tag $tag from ECR repository ... ";
+
+    my $delete_image_cmd = "aws ecr batch-delete-image --repository-name $applicationName --image-ids imageTag=$tag --region $region --profile $awsProfile";
+    my $delete_image_output = `$delete_image_cmd`;
+    if ($? != 0) {
+        die "\nFailed to delete docker image with tag $tag using command: $delete_image_cmd\n$delete_image_output\n";
+    }
+    print "Success\n";
+
+    print "Deleting existing docker image with tag $tag from local Docker repository ... ";
+    my $delete_local_image_cmd = "docker rmi $accountId.dkr.ecr.$region.amazonaws.com/$applicationName:$tag";
+    my $delete_local_image_output = `$delete_local_image_cmd`;
+    if ($? != 0) {
+        die "\nFailed to delete local docker image with tag $tag using command: $delete_local_image_cmd\n$delete_local_image_output\nVerify Docker is running\n";
+    }
+    print "Success\n";
+}
+
 sub build_and_push_docker_image {
     my ($build_docker_image) = @_;
-    my $list_images_cmd = "docker image ls";
-    my $list_images_output = `$list_images_cmd`;
-    if ($? != 0) {
-        die "Failed executing $list_images_cmd to obtain list of docker images\nVerify Docker is running\n";
-    }
-    
-    my @output = split /\n/, $list_images_output;
-    my @app_images = grep /.*\/$applicationName/, @output;
-    my $tag = 1;
-    my @versions = ();
-    if (@app_images != -1) {
-        for my $line (@app_images) {
-            #  Just in case there's an issue where the tag isn't set to a number
-            if ($line =~ /$applicationName\s+(\d+)\s+/) {
-                push @versions, $1;
-            }
-            
-        }
-        my @sorted_versions = sort {$a <=> $b} @versions;
-        $tag = $sorted_versions[@sorted_versions-1] + 1;
-    }
-    
+
+    my $tag = get_next_image_tag();
+        
     if ($build_docker_image) {
         print "Building docker image with tag $tag ... ";
         chdir ($server_dir) or die "Cannot change directories to $server_dir";
@@ -178,7 +205,7 @@ sub build_and_push_docker_image {
             die "Failed to push image to using command $push_image_command";
         }
 
-        print "Done\n";
+        print "Done\n";        
     }
     else {
         $tag -= 1;
@@ -296,16 +323,16 @@ sub update_load_balancer_name {
 compile_webapp() unless (!$compile_webapp);
 compile_server() unless (!$compile_server);
 
-bootstrap_cdk_environment();
-
-build_foundation_stack();
-
 log_into_ecr();
+
 my $docker_image_tag = build_and_push_docker_image($build_docker_image)
   unless (!$build_docker_image);
+
+#  $docker_image_tag will be 1 if this is the first build
+delete_existing_docker_image($docker_image_tag-1)
+    unless (!$build_docker_image || $docker_image_tag == 1);
 
 run_cdk_deploy($docker_image_tag);
 
 update_load_balancer_name()
     unless (!$update_load_balancer_dns);
-
