@@ -291,7 +291,7 @@ sub update_load_balancer_name {
         print STDERR "Create this profile using the information in "
     }
 
-    my $cmd = "aws elbv2 describe-load-balancers --names staging-loadbalancer --profile $dns_update_profile";
+    my $cmd = "aws elbv2 describe-load-balancers --names staging-loadbalancer --profile $awsProfile";
     my $load_balancer_info =  `$cmd`;
 
     if ($? != 0) {
@@ -307,7 +307,7 @@ sub update_load_balancer_name {
         print $fh $doc;
         close($fh);
 
-        my $update_dns_cmd = "aws route53 change-resource-record-sets --profile computerscience --hosted-zone-id $hosted_zone_id --change-batch file://$filename";
+        my $update_dns_cmd = "aws route53 change-resource-record-sets --profile $dns_update_profile --hosted-zone-id $hosted_zone_id --change-batch file://$filename";
 
         print "Updating the DNS record for $awsProfile.hopesoftware.institute ... ";
         my $update_output = `$update_dns_cmd`;
