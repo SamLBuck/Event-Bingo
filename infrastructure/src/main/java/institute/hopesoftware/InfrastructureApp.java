@@ -12,6 +12,7 @@ public class InfrastructureApp {
         DbConfiguration dbConfiguration = null;
         ServiceConfiguration serviceConfiguration = null;
         VpcConfiguration vpcConfiguration = null;
+        PinpointConfiguration pinpointConfiguration = null;
 
         App app = new App();
 
@@ -74,6 +75,14 @@ public class InfrastructureApp {
         }
 
         try {
+            pinpointConfiguration = PinpointConfiguration.fromContextNode(app.getNode());
+        }
+        catch (Exception e) {
+            System.err.println("Exception reading Pinpoint configuration: " + e.getMessage());
+            System.exit(1);
+        }
+
+        try {
             NetworkInputParameters networkInputParameters = 
                 new NetworkInputParameters().withSslCertificateArn(sslCertificateARN);
 
@@ -84,6 +93,7 @@ public class InfrastructureApp {
                 serviceConfiguration, 
                 userPoolConfiguration,
                 vpcConfiguration,
+                pinpointConfiguration,
                 networkInputParameters
             );
 

@@ -53,6 +53,8 @@ import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
+import software.amazon.awscdk.services.pinpoint.CfnAPNSChannel;
+import software.amazon.awscdk.services.pinpoint.CfnAPNSSandboxChannel;
 import software.amazon.awscdk.services.pinpoint.CfnApp;
 import software.amazon.awscdk.services.rds.CfnDBInstance;
 import software.amazon.awscdk.services.rds.CfnDBSubnetGroup;
@@ -79,6 +81,7 @@ public class ApplicationStack extends Stack {
     private DbConfiguration dbConfiguration;
     private ServiceConfiguration serviceConfiguration;
     private VpcConfiguration vpcConfiguration;
+    private PinpointConfiguration pinpointConfiguration;
 
     public ApplicationStack(
             final Construct scope, final String id,
@@ -88,6 +91,7 @@ public class ApplicationStack extends Stack {
             ServiceConfiguration serviceConfiguration,
             UserPoolConfiguration userPoolConfiguration,
             VpcConfiguration vpcConfiguration,                        
+            PinpointConfiguration pinpointConfiguration, 
             NetworkInputParameters networkInputParameters)
             throws Exception {
         super(scope, id, StackProps.builder()
@@ -101,7 +105,8 @@ public class ApplicationStack extends Stack {
         this.vpcConfiguration = vpcConfiguration;
         this.dbConfiguration = dbConfiguration;
         this.serviceConfiguration = serviceConfiguration;
-
+        this.pinpointConfiguration = pinpointConfiguration;
+        
         if (userPoolConfiguration.isEnabled()) {
             setupCognito();
         }
@@ -116,14 +121,43 @@ public class ApplicationStack extends Stack {
             createPostgresDatabase();
         }
 
+        if (pinpointConfiguration.isEnabled()) {
+           createPinpointApplication();
+        }
+
+        if (serviceConfiguration.isEnabled()) {
+            createService();
+        }
+    }
+
+    private void createPinpointApplication () {
+        pinpointConfiguration.readTokenInformationFromAWSParameterStore(this);
+
         CfnApp pinpointApp = CfnApp.Builder
             .create(this, "pinpoint-app")
             .name(applicationEnvironment.prefix("pinpoint-app"))
             .build();
+
+        CfnAPNSChannel apnsChannel = CfnAPNSChannel.Builder
+            .create(this, "pinpoint-app-apns-channel") 
+            .applicationId(pinpointApp.getRef())
+            .teamId(pinpointConfiguration.getTeamId())
+            .bundleId(pinpointConfiguration.getBundleId())
+            .tokenKey(pinpointConfiguration.getTokenKey())
+            .tokenKeyId(pinpointConfiguration.getTokenKeyId())   
+            .enabled(true)         
+            .build();
             
-        if (serviceConfiguration.isEnabled()) {
-            createService();
-        }
+        CfnAPNSSandboxChannel apnsSandboxChannel = CfnAPNSSandboxChannel.Builder
+            .create(this, "pinpoint-app-apns-sandbox-channel")
+            .applicationId(pinpointApp.getRef())
+            .teamId(pinpointConfiguration.getTeamId())
+            .bundleId(pinpointConfiguration.getBundleId())
+            .tokenKey(pinpointConfiguration.getTokenKey())
+            .tokenKeyId(pinpointConfiguration.getTokenKeyId())
+            .enabled(true)
+            .build();
+
     }
 
     //  The following methods are taken from the Stratospheric Service.java construct
@@ -241,6 +275,7 @@ public class ApplicationStack extends Stack {
         }
 
         for (String groupName: userPoolConfiguration.getGroupNames()) {
+            System.err.println("Trying to create a cognito group with name: " + groupName);
             CfnUserPoolGroup group = CfnUserPoolGroup.Builder.create(
                 this, 
                 String.format("%s-group-%s", applicationName, groupName)

@@ -56,9 +56,7 @@ The following properties can be specified to customize the PostgreSql instance. 
 ####  Cluster / Service
 This resource is the Spring Boot server serving the project's API / website.  You will almost always want to this resource built, which is why the default value of the `service.enabled` property is **true**.
 
-The `service.dockerImageTag` property specifies which version of a Docker image to deploy as the software running on the cluster.  You generally shouldn't specify this value in `cdk.json` directly; it will be computed by the `deploy.pl` deployment script based on the tags associated with the project on your local machine.  
-
-This does mean its best for a single project member to be responsible for deploying the project infrastructure; otherwise some coordination around Docker image tags will be required.
+The `service.dockerImageTag` property specifies which version of a Docker image to deploy as the software running on the cluster.  You generally shouldn't specify this value in `cdk.json` directly; it will be computed by the `deploy.pl` deployment script based on the tags associated with the project on AWS.  
 
 The other properties associated with the ECS service can likely be left at their defaults.
 
@@ -78,6 +76,16 @@ You **must** include the dependency shown below in your server's `pom.xml` to en
     ````
 *  **service.healthCheck.port**:  this is the port the Spring Server is running on internally to the cluster.
 
+#### Push Notifications ####
+The Amazon Pinpoint (now called End User Messaging) tool is used to handle push notifications.  Currently push notifications can only be configured to send notifications to iOS devices but support for Android is coming.
+
+To enable the creation of a Pinpoint project for your application, change the following properties in `cdk.json`:
+
+* **notifications.enabled**:  set this property's value to **true**
+* **notifications.bundleId**:  this is the bundle ID associated with the project.  It can be found in the [Apple Developer Console](https://developer.apple.com)
+
+Currently, you must also create several parameters in the [AWS parameter store](https://aws.amazon.com).  You can find these value in [this Google Doc](https://docs.google.com/document/d/1Pms6jVTeW4sVE59jSbplpgUgFcL7zJMRCR_k1kzv5Q0/edit?usp=sharing); if you don't have access, contact the HSI program director via email. 
+
 ##  Deploying the system
 After ensuring an AWS profile is configured on your system and modifying the values in `cdk.json` as necessary, you can execute the Perl script `deploy.pl` from the root of your project.
 
@@ -86,4 +94,6 @@ You can control which system components are built using the following command li
 *  **--webapp**:  This will compile the Flutter web application in the `web` folder and store the compiled resources in `src/main/resources/static/app`.  This file will be acessible from the project's domain using a URL like **https://domain.hopesoftware.institute/app/index.html**.
 * **--server**:  This will compile the Spring Boot project in the `server` folder, storing the compiled resources in `server\target`.  This folder is referenced by the `Dockerfile` which is used to create the Docker image which is deployed to AWS.
 
-The default values for both of these properties is set to 1, meaning they will be built unless you specify otherwise by passing the arguments `--no-webapp` / `--no-server`, respectively.
+You can control the default for whether the web application is built by changing the value of the property `compile.webapp` in `cdk.json`.
+
+You can also specify that these components should not be built during a specific deployment by passing the arguments `--no-webapp` / `--no-server`, respectively.  Command line arguments override the values in `cdk.json`.

@@ -42,12 +42,15 @@ public class UserPoolConfiguration {
         UserPoolConfiguration userPoolConfiguration = new UserPoolConfiguration();
         
         var enabled = ConfigurationUtilities.readBooleanFromContext(node, KEY_ENABLED);
+        System.err.println("Value of UserPoolConfiguration.enabled is " + enabled);
         userPoolConfiguration.setEnabled(enabled);
                         
         var selfSignUpEnabled = ConfigurationUtilities.readBooleanFromContext(node, KEY_SELFSIGNUP_ENABLED);
         userPoolConfiguration.setSelfSignupEnabled(selfSignUpEnabled);
 
         var groupNames = ConfigurationUtilities.readListStringsFromContext(node, KEY_GROUP_NAMES);
+        System.err.println("Group names is " + groupNames);
+        
         userPoolConfiguration.setGroupNames(groupNames);
 
         var googleLoginEnabled = ConfigurationUtilities.readBooleanFromContext(node, KEY_GOOGLE_LOGIN_ENABLED);
