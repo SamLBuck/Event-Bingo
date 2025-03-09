@@ -36,14 +36,10 @@ public class ServiceConfiguration  {
 
         if (configuration.isEnabled()) {
             var dockerImageTag = readIntFromContext(node, KEY_DOCKER_IMAGE_TAG);
-            System.err.println("Image tag: " + dockerImageTag);
             configuration.setDockerImageTag(String.valueOf(dockerImageTag));
             configuration.setDesiredInstances(readIntFromContext(node, KEY_DESIRED_INSTANCES));
-            System.err.println("Desired instances: " + configuration.getDesiredInstances());
 
-            System.err.println("Checking health check path: " + KEY_HEALTH_CHECK_PATH);
             configuration.setHealthCheckPath(readStringFromContext(node, KEY_HEALTH_CHECK_PATH));
-            System.err.println("Health check path: " + configuration.getHealthCheckPath());
 
             configuration.setHealthCheckPort(readIntFromContext(node, KEY_HEALTH_CHECK_PORT));
         }

@@ -43,7 +43,6 @@ public class InfrastructureApp {
 
         try {
             userPoolConfiguration = UserPoolConfiguration.fromContextNode(app.getNode());
-            System.err.println(String.format("Enabled is %s from within InfrastructureApp user pool configuration", userPoolConfiguration.isEnabled()));
         }
         catch (Exception e) {
             System.err.println("Exception reading user pool configuration: " + e.getMessage());

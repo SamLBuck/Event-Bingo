@@ -69,8 +69,7 @@ public class ConfigurationUtilities {
 
     @SuppressWarnings("unchecked")
     public static List<String> readListStringsFromContext (Node node, String key) throws ConfigurationTypeException {
-        var valueAsObject = (Object) node.tryGetContext(key);     
-        System.err.println("Looking at " + valueAsObject + " for property " + key + " in readListStringsFromContext");           
+        var valueAsObject = (Object) node.tryGetContext(key);          
         if (valueAsObject instanceof List) {
             
             return (List<String>) valueAsObject;            
