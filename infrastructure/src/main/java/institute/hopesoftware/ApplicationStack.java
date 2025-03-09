@@ -35,6 +35,11 @@ import software.amazon.awscdk.services.cognito.UserPoolClient;
 import software.amazon.awscdk.services.cognito.UserPoolClientIdentityProvider;
 import software.amazon.awscdk.services.cognito.UserPoolDomainOptions;
 import software.amazon.awscdk.services.cognito.UserPoolIdentityProviderGoogle;
+import software.amazon.awscdk.services.cognito.identitypool.alpha.IdentityPool;
+import software.amazon.awscdk.services.cognito.identitypool.alpha.IdentityPoolAuthenticationProviders;
+import software.amazon.awscdk.services.cognito.identitypool.alpha.IdentityPoolProviderUrl;
+import software.amazon.awscdk.services.cognito.identitypool.alpha.IdentityPoolRoleMapping;
+import software.amazon.awscdk.services.cognito.identitypool.alpha.UserPoolAuthenticationProvider;
 import software.amazon.awscdk.services.ec2.CfnSecurityGroup;
 import software.amazon.awscdk.services.ec2.CfnSecurityGroupIngress;
 import software.amazon.awscdk.services.ec2.ISubnet;
@@ -47,6 +52,7 @@ import software.amazon.awscdk.services.elasticloadbalancingv2.CfnTargetGroup;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IManagedPolicy;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.iam.Policy;
 import software.amazon.awscdk.services.iam.PolicyDocument;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
@@ -76,6 +82,8 @@ public class ApplicationStack extends Stack {
     private CfnDBInstance dbInstance;
     private ISecret databaseSecret;
     private CfnSecurityGroup databaseSecurityGroup;
+
+    private CfnApp pinpointApp;
 
     private UserPoolConfiguration userPoolConfiguration;
     private DbConfiguration dbConfiguration;
@@ -107,7 +115,9 @@ public class ApplicationStack extends Stack {
         this.serviceConfiguration = serviceConfiguration;
         this.pinpointConfiguration = pinpointConfiguration;
         
-        if (userPoolConfiguration.isEnabled()) {
+        //  Need to create a user pool for pinpoint, so do so even if the user pool configuration 
+        //  doesn't explicitly require us to do so.
+        if (userPoolConfiguration.isEnabled() || pinpointConfiguration.isEnabled()) {
             setupCognito();
         }
         
@@ -133,7 +143,7 @@ public class ApplicationStack extends Stack {
     private void createPinpointApplication () {
         pinpointConfiguration.readTokenInformationFromAWSParameterStore(this);
 
-        CfnApp pinpointApp = CfnApp.Builder
+        pinpointApp = CfnApp.Builder
             .create(this, "pinpoint-app")
             .name(applicationEnvironment.prefix("pinpoint-app"))
             .build();
@@ -147,7 +157,7 @@ public class ApplicationStack extends Stack {
             .tokenKeyId(pinpointConfiguration.getTokenKeyId())   
             .enabled(true)         
             .build();
-            
+
         CfnAPNSSandboxChannel apnsSandboxChannel = CfnAPNSSandboxChannel.Builder
             .create(this, "pinpoint-app-apns-sandbox-channel")
             .applicationId(pinpointApp.getRef())
@@ -158,6 +168,92 @@ public class ApplicationStack extends Stack {
             .enabled(true)
             .build();
 
+        IdentityPool identityPool = IdentityPool.Builder.create(this, "pinpoint-identity-pool")
+            .identityPoolName("pinpoint-identity-pool")
+            .allowUnauthenticatedIdentities(true)
+            .authenticationProviders(
+                IdentityPoolAuthenticationProviders.builder()
+                    .userPools(
+                        List.of(
+                            UserPoolAuthenticationProvider.Builder.create()
+                                .userPool(userPool)
+                                .userPoolClient(userPoolClient)
+                                .disableServerSideTokenCheck(true)
+                                .build()
+                        )
+                    ).build()
+            )
+            .roleMappings(
+                List.of(
+                    IdentityPoolRoleMapping.builder()
+                    .mappingKey("cognito")
+                    .providerUrl(IdentityPoolProviderUrl.userPool(userPool, userPoolClient))
+                    .resolveAmbiguousRoles(true)
+                    .useToken(true)
+                    .build()       
+                )
+            )
+            .build();
+   
+        identityPool.getAuthenticatedRole().attachInlinePolicy(
+            Policy.Builder.create(this, "IP-Authenticated-Role-Policy")
+                .policyName("authenticated-users-pinpoint-identity-pool")
+                .statements(getAuthenticatedRolePolicies())
+                .build()
+        );
+
+        identityPool.getUnauthenticatedRole().attachInlinePolicy(
+            Policy.Builder.create(this, "IP-Unauthenticated-Role-Policy")
+            .policyName("unauthenticated-users-pinpoint-identity-pool")
+            .statements(getUnauthenticatedRolePolicies())
+            .build()
+        );
+    }
+
+    private List<PolicyStatement> getUnauthenticatedRolePolicies() {
+        PolicyStatement mobileTargetingPolicy = PolicyStatement.Builder.create()
+            .effect(Effect.ALLOW)
+            .actions(List.of(
+                "mobiletargeting:PutEvents",
+                "mobiletargeting:GetEndpoint",
+                "mobiletargeting:UpdateEndpoint"   
+                )
+            )
+            .resources(List.of(String.format("%s/*", pinpointApp.getAttrArn())))
+        .build();
+
+        PolicyStatement mobileAnalyticsPolicy = PolicyStatement.Builder.create()
+            .effect(Effect.ALLOW)
+            .actions(List.of("mobileanalytics:PutEvents"))            
+            .resources(List.of("*"))
+            .build();
+
+        return List.of(mobileTargetingPolicy, mobileAnalyticsPolicy);
+    }
+
+    private List<PolicyStatement> getAuthenticatedRolePolicies() {
+        PolicyStatement mobileTargetStatement = PolicyStatement.Builder.create()
+        .effect(Effect.ALLOW)
+        .actions(List.of(
+            "mobiletargeting:PutEvents",
+            "mobiletargeting:GetEndpoint",
+            "mobiletargeting:UpdateEndpoint"            
+        ))
+        .resources(List.of (
+            String.format("%s/*", pinpointApp.getAttrArn())
+        ))
+        .build();
+    
+        PolicyStatement cognitoAndAnalyticsStatement = PolicyStatement.Builder.create()
+            .effect(Effect.ALLOW)
+            .actions(List.of (
+                "cognito-sync:*",
+                "cognito-identity:*",
+                "mobileanalytics:PutEvents"
+            ))
+            .resources(List.of("*"))
+            .build();
+        return List.of(mobileTargetStatement, cognitoAndAnalyticsStatement);
     }
 
     //  The following methods are taken from the Stratospheric Service.java construct
