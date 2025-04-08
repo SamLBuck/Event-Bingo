@@ -35,6 +35,11 @@ import software.amazon.awscdk.services.cognito.UserPoolClient;
 import software.amazon.awscdk.services.cognito.UserPoolClientIdentityProvider;
 import software.amazon.awscdk.services.cognito.UserPoolDomainOptions;
 import software.amazon.awscdk.services.cognito.UserPoolIdentityProviderGoogle;
+import software.amazon.awscdk.services.cognito.identitypool.alpha.IdentityPool;
+import software.amazon.awscdk.services.cognito.identitypool.alpha.IdentityPoolAuthenticationProviders;
+import software.amazon.awscdk.services.cognito.identitypool.alpha.IdentityPoolProviderUrl;
+import software.amazon.awscdk.services.cognito.identitypool.alpha.IdentityPoolRoleMapping;
+import software.amazon.awscdk.services.cognito.identitypool.alpha.UserPoolAuthenticationProvider;
 import software.amazon.awscdk.services.ec2.CfnSecurityGroup;
 import software.amazon.awscdk.services.ec2.CfnSecurityGroupIngress;
 import software.amazon.awscdk.services.ec2.ISubnet;
@@ -47,12 +52,16 @@ import software.amazon.awscdk.services.elasticloadbalancingv2.CfnTargetGroup;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IManagedPolicy;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.iam.Policy;
 import software.amazon.awscdk.services.iam.PolicyDocument;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
+import software.amazon.awscdk.services.pinpoint.CfnAPNSChannel;
+import software.amazon.awscdk.services.pinpoint.CfnAPNSSandboxChannel;
+import software.amazon.awscdk.services.pinpoint.CfnApp;
 import software.amazon.awscdk.services.rds.CfnDBInstance;
 import software.amazon.awscdk.services.rds.CfnDBSubnetGroup;
 import software.amazon.awscdk.services.secretsmanager.CfnSecretTargetAttachment;
@@ -74,10 +83,13 @@ public class ApplicationStack extends Stack {
     private ISecret databaseSecret;
     private CfnSecurityGroup databaseSecurityGroup;
 
+    private CfnApp pinpointApp;
+
     private UserPoolConfiguration userPoolConfiguration;
     private DbConfiguration dbConfiguration;
     private ServiceConfiguration serviceConfiguration;
     private VpcConfiguration vpcConfiguration;
+    private PinpointConfiguration pinpointConfiguration;
 
     public ApplicationStack(
             final Construct scope, final String id,
@@ -87,6 +99,7 @@ public class ApplicationStack extends Stack {
             ServiceConfiguration serviceConfiguration,
             UserPoolConfiguration userPoolConfiguration,
             VpcConfiguration vpcConfiguration,                        
+            PinpointConfiguration pinpointConfiguration, 
             NetworkInputParameters networkInputParameters)
             throws Exception {
         super(scope, id, StackProps.builder()
@@ -100,8 +113,11 @@ public class ApplicationStack extends Stack {
         this.vpcConfiguration = vpcConfiguration;
         this.dbConfiguration = dbConfiguration;
         this.serviceConfiguration = serviceConfiguration;
-
-        if (userPoolConfiguration.isEnabled()) {
+        this.pinpointConfiguration = pinpointConfiguration;
+        
+        //  Need to create a user pool for pinpoint, so do so even if the user pool configuration 
+        //  doesn't explicitly require us to do so.
+        if (userPoolConfiguration.isEnabled() || pinpointConfiguration.isEnabled()) {
             setupCognito();
         }
         
@@ -115,9 +131,149 @@ public class ApplicationStack extends Stack {
             createPostgresDatabase();
         }
 
+        if (pinpointConfiguration.isEnabled()) {
+           createPinpointApplication();           
+        }
+
         if (serviceConfiguration.isEnabled()) {
             createService();
         }
+    }
+
+    private void createPinpointApplication () {
+        pinpointConfiguration.readTokenInformationFromAWSParameterStore(this);
+
+        pinpointApp = CfnApp.Builder
+            .create(this, "pinpoint-app")
+            .name(applicationEnvironment.prefix("pinpoint-app"))
+            .build();
+
+        CfnAPNSChannel apnsChannel = CfnAPNSChannel.Builder
+            .create(this, "pinpoint-app-apns-channel") 
+            .applicationId(pinpointApp.getRef())
+            .teamId(pinpointConfiguration.getTeamId())
+            .bundleId(pinpointConfiguration.getBundleId())
+            .tokenKey(pinpointConfiguration.getTokenKey())
+            .tokenKeyId(pinpointConfiguration.getTokenKeyId())   
+            .enabled(true)         
+            .build();
+
+        CfnAPNSSandboxChannel apnsSandboxChannel = CfnAPNSSandboxChannel.Builder
+            .create(this, "pinpoint-app-apns-sandbox-channel")
+            .applicationId(pinpointApp.getRef())
+            .teamId(pinpointConfiguration.getTeamId())
+            .bundleId(pinpointConfiguration.getBundleId())
+            .tokenKey(pinpointConfiguration.getTokenKey())
+            .tokenKeyId(pinpointConfiguration.getTokenKeyId())
+            .enabled(true)
+            .build();
+
+        IdentityPool identityPool = IdentityPool.Builder.create(this, "pinpoint-identity-pool")
+            .identityPoolName("pinpoint-identity-pool")
+            .allowUnauthenticatedIdentities(true)
+            .authenticationProviders(
+                IdentityPoolAuthenticationProviders.builder()
+                    .userPools(
+                        List.of(
+                            UserPoolAuthenticationProvider.Builder.create()
+                                .userPool(userPool)
+                                .userPoolClient(userPoolClient)
+                                .disableServerSideTokenCheck(true)
+                                .build()
+                        )
+                    ).build()
+            )
+            .roleMappings(
+                List.of(
+                    IdentityPoolRoleMapping.builder()
+                    .mappingKey("cognito")
+                    .providerUrl(IdentityPoolProviderUrl.userPool(userPool, userPoolClient))
+                    .resolveAmbiguousRoles(true)
+                    .useToken(true)
+                    .build()       
+                )
+            )
+            .build();
+   
+        identityPool.getAuthenticatedRole().attachInlinePolicy(
+            Policy.Builder.create(this, "IP-Authenticated-Role-Policy")
+                .policyName("authenticated-users-pinpoint-identity-pool")
+                .statements(getAuthenticatedRolePolicies())
+                .build()
+        );
+
+        identityPool.getUnauthenticatedRole().attachInlinePolicy(
+            Policy.Builder.create(this, "IP-Unauthenticated-Role-Policy")
+            .policyName("unauthenticated-users-pinpoint-identity-pool")
+            .statements(getUnauthenticatedRolePolicies())
+            .build()
+        );
+    }
+
+    private PolicyStatement getSendUserMessagesPolicyStatement() {
+        String resource = String.format(
+            "arn:aws:mobiletargeting:%s:%s:apps/%s/messages",
+            awsEnvironment.getRegion(),
+            awsEnvironment.getAccount(),
+            pinpointApp.getRef()
+        );
+
+        PolicyStatement sendUserMessagesPolicy = PolicyStatement.Builder.create()
+            .effect(Effect.ALLOW)
+            .actions(
+                List.of("mobiletargeting:SendUsersMessages")
+            )
+            .resources(
+                List.of(resource)
+            )
+            .build();
+        return sendUserMessagesPolicy;        
+    }
+
+    private List<PolicyStatement> getUnauthenticatedRolePolicies() {
+        PolicyStatement mobileTargetingPolicy = PolicyStatement.Builder.create()
+            .effect(Effect.ALLOW)
+            .actions(List.of(
+                "mobiletargeting:PutEvents",
+                "mobiletargeting:GetEndpoint",
+                "mobiletargeting:UpdateEndpoint"   
+                )
+            )
+            .resources(List.of(String.format("%s/*", pinpointApp.getAttrArn())))
+        .build();
+
+        PolicyStatement mobileAnalyticsPolicy = PolicyStatement.Builder.create()
+            .effect(Effect.ALLOW)
+            .actions(List.of("mobileanalytics:PutEvents"))            
+            .resources(List.of("*"))
+            .build();
+
+        return List.of(mobileTargetingPolicy, mobileAnalyticsPolicy);
+    }
+
+    private List<PolicyStatement> getAuthenticatedRolePolicies() {
+        PolicyStatement mobileTargetStatement = PolicyStatement.Builder.create()
+        .effect(Effect.ALLOW)
+        .actions(List.of(
+            "mobiletargeting:PutEvents",
+            "mobiletargeting:GetEndpoint",
+            "mobiletargeting:UpdateEndpoint"            
+        ))
+        .resources(List.of (
+            String.format("%s/*", pinpointApp.getAttrArn())
+        ))
+        .build();
+    
+        PolicyStatement cognitoAndAnalyticsStatement = PolicyStatement.Builder.create()
+            .effect(Effect.ALLOW)
+            .actions(List.of (
+                "cognito-sync:*",
+                "cognito-identity:*",
+                "mobileanalytics:PutEvents"
+            ))
+            .resources(List.of("*"))
+            .build();
+        return List.of(mobileTargetStatement, cognitoAndAnalyticsStatement);
     }
 
     //  The following methods are taken from the Stratospheric Service.java construct
@@ -235,6 +391,7 @@ public class ApplicationStack extends Stack {
         }
 
         for (String groupName: userPoolConfiguration.getGroupNames()) {
+            System.err.println("Trying to create a cognito group with name: " + groupName);
             CfnUserPoolGroup group = CfnUserPoolGroup.Builder.create(
                 this, 
                 String.format("%s-group-%s", applicationName, groupName)
@@ -422,17 +579,20 @@ public class ApplicationStack extends Stack {
             )
         .build();
 
-        //  Allow the task to access Cognition so Spring components can manage information within 
+        //  Allow the task to access Cognito so Spring components can manage information within 
         //  the user pool
         IManagedPolicy cognitoPowerUser = ManagedPolicy.fromAwsManagedPolicyName("AmazonCognitoPowerUser");
         Role.Builder roleBuilder = Role.Builder.create(this, "ecsTaskRole")
             .assumedBy(
                 ServicePrincipal.Builder.create("ecs-tasks.amazonaws.com").build()
             )
-            .managedPolicies(Arrays.asList(cognitoPowerUser))
+            .managedPolicies(Arrays.asList(cognitoPowerUser))            
             .path("/");
 
         Role ecsTaskRole = roleBuilder.build();
+        if (pinpointConfiguration.isEnabled()) {
+            ecsTaskRole.addToPolicy(getSendUserMessagesPolicyStatement());
+        }
 
         String dockerRepositoryUrl = null;
         if (dockerImageSource.isEcrSource()) {

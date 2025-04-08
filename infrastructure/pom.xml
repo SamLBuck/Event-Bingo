@@ -52,6 +52,17 @@
             <version>${cdk.version}</version>
         </dependency>
 
+        <!-- 
+                This is an alpha version of constructs for creating Identity Pools 
+                Eventually it should be updated to a stable version once this 
+                construct moves out of beta status.
+        -->
+        <dependency>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>cognito-identitypool-alpha</artifactId>
+            <version>2.182.0-alpha.0</version>
+        </dependency>
+
         <dependency>
             <groupId>software.constructs</groupId>
             <artifactId>constructs</artifactId>

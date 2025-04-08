@@ -12,6 +12,7 @@ public class InfrastructureApp {
         DbConfiguration dbConfiguration = null;
         ServiceConfiguration serviceConfiguration = null;
         VpcConfiguration vpcConfiguration = null;
+        PinpointConfiguration pinpointConfiguration = null;
 
         App app = new App();
 
@@ -42,7 +43,6 @@ public class InfrastructureApp {
 
         try {
             userPoolConfiguration = UserPoolConfiguration.fromContextNode(app.getNode());
-            System.err.println(String.format("Enabled is %s from within InfrastructureApp user pool configuration", userPoolConfiguration.isEnabled()));
         }
         catch (Exception e) {
             System.err.println("Exception reading user pool configuration: " + e.getMessage());
@@ -74,6 +74,14 @@ public class InfrastructureApp {
         }
 
         try {
+            pinpointConfiguration = PinpointConfiguration.fromContextNode(app.getNode());
+        }
+        catch (Exception e) {
+            System.err.println("Exception reading Pinpoint configuration: " + e.getMessage());
+            System.exit(1);
+        }
+
+        try {
             NetworkInputParameters networkInputParameters = 
                 new NetworkInputParameters().withSslCertificateArn(sslCertificateARN);
 
@@ -84,6 +92,7 @@ public class InfrastructureApp {
                 serviceConfiguration, 
                 userPoolConfiguration,
                 vpcConfiguration,
+                pinpointConfiguration,
                 networkInputParameters
             );
 

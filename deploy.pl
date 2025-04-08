@@ -5,6 +5,7 @@ use Cwd            qw( abs_path );
 use File::Basename qw( dirname );
 use File::Spec::Functions 'catfile';
 use File::Copy;
+use File::Slurp qw(read_file);
 use File::Temp qw/ tempfile tempdir /;
 
 use Getopt::Long;
@@ -21,11 +22,14 @@ my $compile_server = 1;
 my $build_docker_image = 1;
 my $update_load_balancer_dns = 1;
 
+my $alternate_cdk_json_path = "";
+my $cdkConfig = "";
+
 my $show_help = 0;
 our @context_variables = ();
 
 GetOptions('webapp!' => \$compile_webapp, 'server!' => \$compile_server, 
-    'update-dns!' => \$update_load_balancer_dns,
+    'update-dns!' => \$update_load_balancer_dns, 'cdk-config=s' => \$alternate_cdk_json_path,
     'build_docker_image!' => \$build_docker_image, 'context=s@' => \@context_variables, 'help' => \$show_help);
 
 if ($show_help) {
@@ -33,6 +37,19 @@ if ($show_help) {
     print "Both the management web application and the backend API server will be built by default\n";
     print "Use the --nowebapp and --no-server options to use an existing compiled version of those components\n";
     exit (0);
+}
+
+if ($alternate_cdk_json_path) {
+    $cdkConfig = read_alternate_cdk_json_file($alternate_cdk_json_path);
+}
+
+sub read_alternate_cdk_json_file($) {
+    my ($path) = @_;
+
+    my $json_text = read_file($path);
+    my $json_output = decode_json($json_text);
+
+    return $json_output;
 }
 
 sub read_value_from_cdk_json ($) {
@@ -55,6 +72,11 @@ sub read_value_from_cdk_json ($) {
             print STDERR "You passed: $values[0]\n";
             exit(1);
         }
+    }
+
+    # Override values in cdk.json if they are present in the alternate config file
+    if ($cdkConfig && exists($cdkConfig->{$variableName})) {
+        return $cdkConfig->{$variableName};
     }
 
     my $cdk_json_path = catfile($deploy_dir, "cdk.json");
@@ -86,7 +108,7 @@ sub read_value_from_cdk_json ($) {
 
 if  ($compile_webapp == -1) {
     $compile_webapp = read_value_from_cdk_json("compile.webapp");
-    $compile_webapp = $compile_webapp eq "false" ? 0 : 1;
+    $compile_webapp = $compile_webapp == 0 || $compile_webapp eq "false" ? 0 : 1;
 }
 
 my $accountId = read_value_from_cdk_json("accountId");
@@ -174,7 +196,7 @@ sub delete_existing_docker_image {
     my $delete_local_image_cmd = "docker rmi $accountId.dkr.ecr.$region.amazonaws.com/$applicationName:$tag";
     my $delete_local_image_output = `$delete_local_image_cmd`;
     if ($? != 0) {
-        die "\nFailed to delete local docker image with tag $tag using command: $delete_local_image_cmd\n$delete_local_image_output\nVerify Docker is running\n";
+        print "\nFailed to delete local docker image with tag $tag using command: $delete_local_image_cmd\n$delete_local_image_output\nVerify Docker is running\n";
     }
     print "Success\n";
 }
@@ -218,9 +240,9 @@ sub build_foundation_stack() {
     my $cdk_command = "cdk deploy FoundationStack --context dockerImageTag=latest --profile $awsProfile --require-approval never";
 
     for my $context_argument (@main::context_variables) {
-        $cdk_command .= " --context $context_argument";
-    
+        $cdk_command .= " --context $context_argument";    
     }
+
     print "Building foundation stack ... ";
     my $output = `$cdk_command`;
 
@@ -253,11 +275,38 @@ sub run_cdk_deploy {
     for my $context_argument (@main::context_variables) {
         $cdk_command .= " --context $context_argument";
     }
-    `$cdk_command`;
+
+    my $config = $cdkConfig;
+    for my $property (keys %{$config}) {
+        if (ref($config->{$property}) eq 'ARRAY') {
+            $cdk_command .= " --context $property=";            
+            $cdk_command .= join(',', @{$config->{$property}});            
+        }
+        else {
+            $cdk_command .= " --context $property=$config->{$property}";
+        }
+    }
+
+    #  Redirect standard error to standard output so it can be easily captured
+    # $cdk_command .= " 2>&1";
+
+    print "Deploying resources to AWS ... ";
+    my $output = `$cdk_command`;
 
     if ($? != 0) {
-        die "Error running cdk deploy command: $cdk_command";
-    }
+        print "\n";
+        if ($output =~ /Unable to fetch parameters \[(.+)\]/) {
+            print "-" x 80, "\n";
+            print "Missing parameter:  Add a value for $1 to the\nSSM Parameter Store for $accountId\n";
+            print "-" x 80, "\n";
+        }
+        else {
+            print "Error running cdk deploy command: $cdk_command\n";
+            print "$output\n";            
+        }
+        die;
+    }    
+    print "Success\n";    
 }
 
 sub create_dns_update_doc {

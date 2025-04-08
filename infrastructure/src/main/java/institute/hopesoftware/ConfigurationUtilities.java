@@ -25,7 +25,13 @@ public class ConfigurationUtilities {
             return (Boolean) valueAsObject;            
         }
         else if (valueAsObject instanceof String) {
-            return Boolean.valueOf((String) valueAsObject);
+            String valueAsString = (String) valueAsObject;
+            if (valueAsString.matches("[0-9]+")) {
+                return Integer.parseInt(valueAsString) != 0;                
+            }            
+            else {
+                return Boolean.valueOf((String) valueAsObject);
+            }
         }
         else {
             throw new ConfigurationTypeException(key, "Boolean", valueAsObject);
@@ -63,14 +69,16 @@ public class ConfigurationUtilities {
 
     @SuppressWarnings("unchecked")
     public static List<String> readListStringsFromContext (Node node, String key) throws ConfigurationTypeException {
-        var valueAsObject = (Object) node.tryGetContext(key);                
+        var valueAsObject = (Object) node.tryGetContext(key);          
         if (valueAsObject instanceof List) {
             
             return (List<String>) valueAsObject;            
         }
         else if (valueAsObject instanceof String) {
-            String stringValue = (String) valueAsObject;
-            return List.of(stringValue.split(","));
+            String stringValue = (String) valueAsObject;            
+            return List.<String>of(stringValue.split(","))
+                .stream()
+                .filter(s -> s.length() > 0).toList();
         }
         else {
             throw new ConfigurationTypeException(key, "List<String>", valueAsObject);

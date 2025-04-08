@@ -48,6 +48,7 @@ public class UserPoolConfiguration {
         userPoolConfiguration.setSelfSignupEnabled(selfSignUpEnabled);
 
         var groupNames = ConfigurationUtilities.readListStringsFromContext(node, KEY_GROUP_NAMES);
+
         userPoolConfiguration.setGroupNames(groupNames);
 
         var googleLoginEnabled = ConfigurationUtilities.readBooleanFromContext(node, KEY_GOOGLE_LOGIN_ENABLED);
