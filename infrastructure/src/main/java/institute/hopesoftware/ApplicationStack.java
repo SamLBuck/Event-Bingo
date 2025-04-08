@@ -132,7 +132,7 @@ public class ApplicationStack extends Stack {
         }
 
         if (pinpointConfiguration.isEnabled()) {
-           createPinpointApplication();
+           createPinpointApplication();           
         }
 
         if (serviceConfiguration.isEnabled()) {
@@ -208,6 +208,26 @@ public class ApplicationStack extends Stack {
             .statements(getUnauthenticatedRolePolicies())
             .build()
         );
+    }
+
+    private PolicyStatement getSendUserMessagesPolicyStatement() {
+        String resource = String.format(
+            "arn:aws:mobiletargeting:%s:%s:apps/%s/messages",
+            awsEnvironment.getRegion(),
+            awsEnvironment.getAccount(),
+            pinpointApp.getRef()
+        );
+
+        PolicyStatement sendUserMessagesPolicy = PolicyStatement.Builder.create()
+            .effect(Effect.ALLOW)
+            .actions(
+                List.of("mobiletargeting:SendUsersMessages")
+            )
+            .resources(
+                List.of(resource)
+            )
+            .build();
+        return sendUserMessagesPolicy;        
     }
 
     private List<PolicyStatement> getUnauthenticatedRolePolicies() {
@@ -559,17 +579,20 @@ public class ApplicationStack extends Stack {
             )
         .build();
 
-        //  Allow the task to access Cognition so Spring components can manage information within 
+        //  Allow the task to access Cognito so Spring components can manage information within 
         //  the user pool
         IManagedPolicy cognitoPowerUser = ManagedPolicy.fromAwsManagedPolicyName("AmazonCognitoPowerUser");
         Role.Builder roleBuilder = Role.Builder.create(this, "ecsTaskRole")
             .assumedBy(
                 ServicePrincipal.Builder.create("ecs-tasks.amazonaws.com").build()
             )
-            .managedPolicies(Arrays.asList(cognitoPowerUser))
+            .managedPolicies(Arrays.asList(cognitoPowerUser))            
             .path("/");
 
         Role ecsTaskRole = roleBuilder.build();
+        if (pinpointConfiguration.isEnabled()) {
+            ecsTaskRole.addToPolicy(getSendUserMessagesPolicyStatement());
+        }
 
         String dockerRepositoryUrl = null;
         if (dockerImageSource.isEcrSource()) {
