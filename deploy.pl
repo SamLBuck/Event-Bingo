@@ -196,7 +196,7 @@ sub delete_existing_docker_image {
     my $delete_local_image_cmd = "docker rmi $accountId.dkr.ecr.$region.amazonaws.com/$applicationName:$tag";
     my $delete_local_image_output = `$delete_local_image_cmd`;
     if ($? != 0) {
-        die "\nFailed to delete local docker image with tag $tag using command: $delete_local_image_cmd\n$delete_local_image_output\nVerify Docker is running\n";
+        print "\nFailed to delete local docker image with tag $tag using command: $delete_local_image_cmd\n$delete_local_image_output\nVerify Docker is running\n";
     }
     print "Success\n";
 }
@@ -288,7 +288,7 @@ sub run_cdk_deploy {
     }
 
     #  Redirect standard error to standard output so it can be easily captured
-    $cdk_command .= " 2>&1";
+    # $cdk_command .= " 2>&1";
 
     print "Deploying resources to AWS ... ";
     my $output = `$cdk_command`;
