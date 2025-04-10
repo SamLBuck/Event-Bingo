@@ -473,7 +473,8 @@ public class ApplicationStack extends Stack {
 
     private void createService() {
         Map<String, String> vars = new HashMap<String, String>();
-
+        vars.put("AWS_REGION", awsEnvironment.getRegion());
+        
         if (dbConfiguration.isEnabled()) {
             String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s",
                 dbInstance.getAttrEndpointAddress(),
@@ -487,6 +488,10 @@ public class ApplicationStack extends Stack {
 
             String dbPassword = databaseSecret.secretValueFromJson("password").unsafeUnwrap();
             vars.put("SPRING_DATASOURCE_PASSWORD", dbPassword);
+        }
+
+        if (pinpointConfiguration.isEnabled()) {
+            vars.put("PINPOINT_APPLICATION_ID", pinpointApp.getRef());
         }
 
         DockerImageSource dockerImageSource = new DockerImageSource(applicationEnvironment.getApplicationName(), serviceConfiguration.getDockerImageTag());
