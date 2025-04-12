@@ -16,7 +16,8 @@ my $server_dir = catfile($root_dir, "server");
 my $client_dir = catfile($root_dir, "web");
 my $webapp_dir = catfile($server_dir, "src", "main", "resources", "static", "app");
 my $deploy_dir = catfile($root_dir, "infrastructure");
-my $amplify_configuration_file = catfile($root_dir, "mobile", "assets", "amplifyconfiguration.json");
+my $amplify_configuration_dir = catfile ("mobile", "assets");
+my $amplify_configuration_file = catfile($amplify_configuration_dir, "amplifyconfiguration.json");
 
 my $compile_webapp = -1;
 my $compile_server = 1;
@@ -553,6 +554,8 @@ sub write_amplify_configuration() {
 
     # Write the Amplify configuration file    
     print "\tWriting configuration to $amplify_configuration_file ... ";
+    chdir ($root_dir);
+
     open(my $fh, '>', $amplify_configuration_file) or die "Could not open file '$amplify_configuration_file' for writing ($!)";
     print $fh to_json($configuration, {'pretty'=>1});
     close($fh);
@@ -620,8 +623,9 @@ sub update_load_balancer_name {
     }
 }
 
-#write_amplify_configuration();
-#exit 0;
+unless (-e $amplify_configuration_dir) {
+    mkdir ($amplify_configuration_dir) or die "Failed to create amplify configuration directory $amplify_configuration_dir";
+}
 
 compile_webapp() unless (!$compile_webapp);
 compile_server() unless (!$compile_server);
