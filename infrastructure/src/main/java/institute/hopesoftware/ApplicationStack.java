@@ -168,8 +168,10 @@ public class ApplicationStack extends Stack {
             .enabled(true)
             .build();
 
+        String identityPoolName = String.format("%s-pinpoint-identity-pool", applicationEnvironment.getEnvironmentName());
+
         IdentityPool identityPool = IdentityPool.Builder.create(this, "pinpoint-identity-pool")
-            .identityPoolName("pinpoint-identity-pool")
+            .identityPoolName(identityPoolName)
             .allowUnauthenticatedIdentities(true)
             .authenticationProviders(
                 IdentityPoolAuthenticationProviders.builder()

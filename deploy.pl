@@ -16,7 +16,7 @@ my $server_dir = catfile($root_dir, "server");
 my $client_dir = catfile($root_dir, "web");
 my $webapp_dir = catfile($server_dir, "src", "main", "resources", "static", "app");
 my $deploy_dir = catfile($root_dir, "infrastructure");
-my $amplify_configuration_file = catfile($root_dir, "mobile", "lib", "amplifyconfiguration.json");
+my $amplify_configuration_file = catfile($root_dir, "mobile", "assets", "amplifyconfiguration.json");
 
 my $compile_webapp = -1;
 my $compile_server = 1;
@@ -117,6 +117,7 @@ my $region = read_value_from_cdk_json("region");
 my $awsProfile =  read_value_from_cdk_json("awsProfile");
 
 my $applicationName = read_value_from_cdk_json("applicationName");
+my $environmentName = read_value_from_cdk_json("environmentName");
 
 sub compile_webapp () {
     chdir ($client_dir)
@@ -310,9 +311,7 @@ sub run_cdk_deploy {
     print "Success\n";    
 }
 
-sub write_amplify_configuration() {
-    print "Updating Amplify configuration\n";
-
+sub read_cognito_information() {
     print "\tListing user pools for $awsProfile ... ";
     my $list_user_pools_command = "aws cognito-idp list-user-pools --profile $awsProfile --max-results 10";
     my $output = `$list_user_pools_command`;
@@ -334,6 +333,7 @@ sub write_amplify_configuration() {
             last;
         }
     }
+
     if ($user_pool_id eq "") {
         die "Couldn't find user pool named $user_pool_name";
     }
@@ -413,42 +413,37 @@ sub write_amplify_configuration() {
         push @social_providers, uc($provider) unless ($provider eq "COGNITO")
     };
 
-    my $amplify_config = {
-        "Version" => "1.0", 
-        "auth" => {
-            "plugins"=> {
-                "awsCognitoAuthPlugin" => {
-                    "Version" => "0.1.0",
-                    "IdentityManager" => { "Default" => {} },
-                    "CognitoUserPool" => {
-                        "Default" => {
-                            "PoolId" => "$user_pool_id",
-                            "AppClientId" => "$app_client_id",
-                            "Region" => $region
-                        }
-                    },
-                    "Auth" => {
-                        "Default" => {
-                            "authenticationFlowType" => "USER_SRP_AUTH",
-                            "socialProviders" => \@social_providers,
-                            "mfaConfiguration" => $user_pool_details->{"MfaConfiguration"},
-                            "mfaTypes" => [],
-                            "passwordProtectionSettings" => $password_protection_settings,
-                            "usernameAttributes" =>  $username_attributes
-                        }
+    my $auth = {        
+        "plugins"=> {
+            "awsCognitoAuthPlugin" => {
+                "Version" => "0.1.0",
+                "IdentityManager" => { "Default" => {} },
+                "CognitoUserPool" => {
+                    "Default" => {
+                        "PoolId" => "$user_pool_id",
+                        "AppClientId" => "$app_client_id",
+                        "Region" => $region
+                    }
+                },
+                "Auth" => {
+                    "Default" => {
+                        "authenticationFlowType" => "USER_SRP_AUTH",
+                        "socialProviders" => \@social_providers,
+                        "mfaConfiguration" => $user_pool_details->{"MfaConfiguration"},
+                        "mfaTypes" => [],
+                        "passwordProtectionSettings" => $password_protection_settings,
+                        "usernameAttributes" =>  $username_attributes,
+                        "signupAttributes" => []
                     }
                 }
             }
-        }
-       
+        }           
     };
-
 
     my $google_auth_enabled = read_value_from_cdk_json("cognito.googleLogin.enabled");
 
-    if ($google_auth_enabled) {
-       
-        $amplify_config->{"auth"}->{"plugins"}->{"awsCognitoAuthPlugin"}->{"Auth"}->{"Default"}->{"OAuth"} = {
+    if ($google_auth_enabled) {       
+        $auth->{"plugins"}->{"awsCognitoAuthPlugin"}->{"Auth"}->{"Default"}->{"OAuth"} = {
             "WebDomain" => "$applicationName.auth.$region.amazoncognito.com",
             "AppClientId" => $app_client_id,
             "Scopes" => $app_client->{"AllowedOAuthScopes"},
@@ -456,13 +451,110 @@ sub write_amplify_configuration() {
             "SignInRedirectURI" => join (",", @{$app_client->{"CallbackURLs"}})            
         }
     }
+    return $auth;
+}
 
-    #print to_json($amplify_config, {'pretty'=>1});
+sub read_pinpoint_information($) {    
+    my ($cognitoAuthPlugin) = @_;
+
+    my $project_name = "$environmentName-$applicationName-pinpoint-app";
+
+    my $list_pinpoint_apps_cmd = "aws pinpoint get-apps --profile $awsProfile";
+
+    print "Listing pinpoint applications for $awsProfile ... ";
+    my $output = `$list_pinpoint_apps_cmd`;
+    die "Failed to list pinpoint apps using $list_pinpoint_apps_cmd" unless ($? == 0);
+    print" Success\n";
+
+    my $json_output = decode_json($output);
+    my $items = $json_output->{"ApplicationsResponse"}->{"Item"};
+    my $app_id = "";
+
+    print "\tLocation application pinpoint project ... ";
+    for my $item (@{$items}) {
+        if ($item->{"Name"} eq $project_name) {
+            $app_id = $item->{"Id"};
+        }
+    }
+    die "Cannot find pinpoint project with name $project_name in account $awsProfile" unless($app_id);
+    print "Success\n";
+
+    print "\tLooking for Cognito Identity Pool ... ";
+
+    my $cognito_identity_pool_cmd = 
+        "aws cognito-identity list-identity-pools --profile $awsProfile --max-results 10";
+
+    my $identity_pools_output = `$cognito_identity_pool_cmd`;
+    if ($? != 0) {
+        die "Failed to execute $cognito_identity_pool_cmd to list identity pools";
+    }
+
+    my $identity_pools = decode_json($identity_pools_output);
+    my $identity_pool_id = "";
+
+    my $identity_pool_name = "$environmentName-pinpoint-identity-pool";
+
+    foreach my $identity_pool (@{$identity_pools->{"IdentityPools"}}) {
+        if ($identity_pool->{"IdentityPoolName"} eq $identity_pool_name) {
+            $identity_pool_id = $identity_pool->{"IdentityPoolId"};
+            last;
+        }
+    }
+
+    if ($identity_pool_id eq "") {
+        die "Couldn't find identity pool named $identity_pool_name";
+    }
+
+    print " found $identity_pool_id\n";
+
+    my $notifications = {
+        "plugins" => {
+            "awsPinpointPushNotificationsPlugin" => {
+                "appId" => "$app_id",
+                "region" => "$region"
+            }
+        }
+    };
+
+    $cognitoAuthPlugin->{"CredentialsProvider"} = {
+            "CognitoIdentity" => {
+                "Default" => {
+                    "PoolId" => "us-east-2:478be7a9-281f-4ab4-9ebb-941239754617",
+                    "Region" => "$region"
+                }
+            }
+    };
+
+    return $notifications;
+}
+
+sub write_amplify_configuration() {
+    print "Updating Amplify configuration\n";
+
+    my $amplify_config = {
+        "Version" => "1.0"
+    };
+
+    if (read_value_from_cdk_json("cognito.enabled") || read_value_from_cdk{"notifications_enabled"}) {
+        $amplify_config->{"auth"} = read_cognito_information();
+    }
+
+    if (read_value_from_cdk_json("notifications.enabled")) {
+        $amplify_config->{"notifications"} = read_pinpoint_information($amplify_config->{"auth"}->{"plugins"}->{"awsCognitoAuthPlugin"});        
+    }
+    
+    my $configuration = {};
+
+    if (-e $amplify_configuration_file) {
+        $configuration = decode_json(read_file($amplify_configuration_file));
+    }
+
+    $configuration->{read_value_from_cdk_json("environmentName")} = $amplify_config;
 
     # Write the Amplify configuration file    
     print "\tWriting configuration to $amplify_configuration_file ... ";
     open(my $fh, '>', $amplify_configuration_file) or die "Could not open file '$amplify_configuration_file' for writing ($!)";
-    print $fh to_json($amplify_config, {'pretty'=>1});
+    print $fh to_json($configuration, {'pretty'=>1});
     close($fh);
     print "Success\n";
     
@@ -528,8 +620,8 @@ sub update_load_balancer_name {
     }
 }
 
-write_amplify_configuration();
-exit 0;
+#write_amplify_configuration();
+#exit 0;
 
 compile_webapp() unless (!$compile_webapp);
 compile_server() unless (!$compile_server);
@@ -539,11 +631,13 @@ log_into_ecr();
 my $docker_image_tag = build_and_push_docker_image($build_docker_image)
   unless (!$build_docker_image);
 
+run_cdk_deploy($docker_image_tag);
+
+#  Can delete last docker image as long as the deployment has completed
+#  successfully
 #  $docker_image_tag will be 1 if this is the first build
 delete_existing_docker_image($docker_image_tag-1)
     unless (!$build_docker_image || $docker_image_tag == 1);
-
-run_cdk_deploy($docker_image_tag);
 
 update_load_balancer_name()
     unless (!$update_load_balancer_dns);
