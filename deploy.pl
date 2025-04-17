@@ -280,18 +280,20 @@ sub run_cdk_deploy {
     }
 
     my $config = $cdkConfig;
-    for my $property (keys %{$config}) {
-        if (ref($config->{$property}) eq 'ARRAY') {
-            $cdk_command .= " --context $property=";            
-            $cdk_command .= join(',', @{$config->{$property}});            
-        }
-        else {
-            $cdk_command .= " --context $property=$config->{$property}";
+    if ($config) {
+        for my $property (keys %{$config}) {
+            if (ref($config->{$property}) eq 'ARRAY') {
+                $cdk_command .= " --context $property=";            
+                $cdk_command .= join(',', @{$config->{$property}});            
+            }
+            else {
+                $cdk_command .= " --context $property=$config->{$property}";
+            }
         }
     }
 
     #  Redirect standard error to standard output so it can be easily captured
-    # $cdk_command .= " 2>&1";
+    $cdk_command .= " 2>&1";
 
     print "Deploying resources to AWS ... ";
     my $output = `$cdk_command`;
