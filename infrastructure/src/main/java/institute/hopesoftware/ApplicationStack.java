@@ -496,6 +496,10 @@ public class ApplicationStack extends Stack {
             vars.put("PINPOINT_APPLICATION_ID", pinpointApp.getRef());
         }
 
+        if (userPool != null) {
+            vars.put("COGNITO_USERPOOL_ID", userPool.getUserPoolId());
+        }
+
         DockerImageSource dockerImageSource = new DockerImageSource(applicationEnvironment.getApplicationName(), serviceConfiguration.getDockerImageTag());
 
         List<CfnTargetGroup.TargetGroupAttributeProperty> deregistrationDelayConfiguration = List.of(
