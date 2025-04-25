@@ -11,6 +11,8 @@ use File::Temp qw/ tempfile tempdir /;
 use Getopt::Long;
 use JSON;
 
+my $dns_update_profile = "updatedns";
+
 my $root_dir = dirname(abs_path($0));
 my $server_dir = catfile($root_dir, "server");
 my $client_dir = catfile($root_dir, "web");
@@ -30,6 +32,15 @@ my $cdkConfig = "";
 my $show_help = 0;
 our @context_variables = ();
 
+sub read_alternate_cdk_json_file($) {
+    my ($path) = @_;
+
+    my $json_text = read_file($path);
+    my $json_output = decode_json($json_text);
+
+    return $json_output;
+}
+
 GetOptions('webapp!' => \$compile_webapp, 'server!' => \$compile_server, 
     'update-dns!' => \$update_load_balancer_dns, 'cdk-config=s' => \$alternate_cdk_json_path,
     'build_docker_image!' => \$build_docker_image, 'context=s@' => \@context_variables, 'help' => \$show_help);
@@ -43,15 +54,6 @@ if ($show_help) {
 
 if ($alternate_cdk_json_path) {
     $cdkConfig = read_alternate_cdk_json_file($alternate_cdk_json_path);
-}
-
-sub read_alternate_cdk_json_file($) {
-    my ($path) = @_;
-
-    my $json_text = read_file($path);
-    my $json_output = decode_json($json_text);
-
-    return $json_output;
 }
 
 sub read_value_from_cdk_json ($) {
@@ -108,6 +110,43 @@ sub read_value_from_cdk_json ($) {
     return $value;
 }
 
+sub check_if_profile_exists ($) {
+    my ($desired_profile) = @_;
+    my $cmd = "aws configure list-profiles";
+    my $output = `$cmd`;
+    
+    unless ($? == 0) {
+        die "Failed to list AWS profiles using cmd $cmd";
+    }
+
+    my @profiles = split /\n/, $output;
+    my @matches = grep /$desired_profile/, @profiles;
+    return @matches == 1;
+}
+
+sub verify_profiles {
+    my $profile_to_use = read_value_from_cdk_json("awsProfile");
+    unless (check_if_profile_exists($profile_to_use)) {
+        my $error = "The AWS profile $profile_to_use does not exist\n";
+        my $configFile = "cdk.json";        
+        if ($cdkConfig && exists $cdkConfig->{"awsProfile"}) {
+            $configFile = $alternate_cdk_json_path;
+        }
+        $error .= "Check the value for the property awsProfile specified in the file $configFile\n";
+        
+        die $error;
+    }
+
+    unless (check_if_profile_exists($dns_update_profile)) {
+        my $error = "ERROR: The AWS profile $dns_update_profile does not exist.\n" .
+                    "See the information at https://link.hope.edu/updatedns for details\n" .
+                    "If you don't have access to this document, contact your instructor\n";
+        die $error;                    
+    }
+}
+
+
+
 if  ($compile_webapp == -1) {
     $compile_webapp = read_value_from_cdk_json("compile.webapp");
     $compile_webapp = $compile_webapp == 0 || $compile_webapp eq "false" ? 0 : 1;
@@ -148,7 +187,7 @@ sub compile_server () {
     print "Success\n";
 }
 
-sub log_into_ecr () {    
+sub log_into_ecr () {            
     my $login_cmd = "aws ecr get-login-password --region $region --profile $awsProfile | docker login --username AWS --password-stdin $accountId.dkr.ecr.$region.amazonaws.com/$applicationName";
 
     print "Logging in to ECR repository ... ";
@@ -585,7 +624,6 @@ sub create_dns_update_doc {
 sub update_load_balancer_name {
     my $list_profiles_cmd = "aws configure list-profiles";
     my $profile_output = `$list_profiles_cmd`;
-    my $dns_update_profile = "updatedns";
 
     chomp ($profile_output);
 
@@ -628,6 +666,8 @@ sub update_load_balancer_name {
 unless (-e $amplify_configuration_dir) {
     mkdir ($amplify_configuration_dir) or die "Failed to create amplify configuration directory $amplify_configuration_dir";
 }
+
+verify_profiles();
 
 compile_webapp() unless (!$compile_webapp);
 compile_server() unless (!$compile_server);
