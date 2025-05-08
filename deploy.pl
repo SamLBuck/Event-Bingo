@@ -26,6 +26,19 @@ my $compile_server = 1;
 my $build_docker_image = 1;
 my $update_load_balancer_dns = 1;
 
+
+my $mode_deploy = "deploy";
+my $mode_destroy = "destroy";
+my $mode_update_amplify_config = "update-amplify-config";
+
+my $mode = $mode_deploy;
+
+my @mode_options = (
+  $mode_deploy,
+  $mode_destroy,
+  $mode_update_amplify_config
+);
+
 my $alternate_cdk_json_path = "";
 my $cdkConfig = "";
 
@@ -41,15 +54,22 @@ sub read_alternate_cdk_json_file($) {
     return $json_output;
 }
 
-GetOptions('webapp!' => \$compile_webapp, 'server!' => \$compile_server, 
+GetOptions('webapp!' => \$compile_webapp, 'server!' => \$compile_server, 'mode=s' => \$mode,
     'update-dns!' => \$update_load_balancer_dns, 'cdk-config=s' => \$alternate_cdk_json_path,
-    'build_docker_image!' => \$build_docker_image, 'context=s@' => \@context_variables, 'help' => \$show_help);
+    'build_docker_image!' => \$build_docker_image, 'context=s@' => \@context_variables,     
+    'help' => \$show_help);
 
 if ($show_help) {
-    print "Usage: perl deploy.pl [--no-webapp] [--no-server] [--no-build_docker_image] [--no-update-dns] [--help]\n\n";
+    print "Usage: perl deploy.pl [--mode mode] [--no-webapp] [--no-server] [--no-build_docker_image] [--no-update-dns] [--cdk-config config.json] [--help]\n\n";
+    print "Options for --mode are ", join(",", @mode_options), "\n";
+    print "Default mode is $mode_deploy\n";
     print "Both the management web application and the backend API server will be built by default\n";
     print "Use the --nowebapp and --no-server options to use an existing compiled version of those components\n";
     exit (0);
+}
+
+unless (grep { $_ eq $mode } @mode_options) {
+    die "Invalid mode: $mode. Valid options are: " . join(", ", @mode_options) . "\n";
 }
 
 if ($alternate_cdk_json_path) {
@@ -144,8 +164,6 @@ sub verify_profiles {
         die $error;                    
     }
 }
-
-
 
 if  ($compile_webapp == -1) {
     $compile_webapp = read_value_from_cdk_json("compile.webapp");
@@ -668,6 +686,16 @@ unless (-e $amplify_configuration_dir) {
 }
 
 verify_profiles();
+
+if ($mode eq $mode_update_amplify_config) {
+    write_amplify_configuration();
+    exit(0);    
+}
+
+if ($mode eq $mode_destroy) {
+    print STDERR "Destroy mode not yet implememnted\n";
+    exit(0);
+}
 
 compile_webapp() unless (!$compile_webapp);
 compile_server() unless (!$compile_server);
