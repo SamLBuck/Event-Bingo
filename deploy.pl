@@ -108,7 +108,7 @@ sub read_value_from_cdk_json ($) {
         or die "Cannot open $cdk_json_path to read $variableName";
 
     chomp (my @lines = <$cdk_json_file>);
-    my @desiredLines = grep /"$variableName\s*":/, @lines;
+    my @desiredLines = grep /"$variableName\s*"\s*:/, @lines;
     if (@desiredLines == 0) {
         die "Could not find $variableName line in $cdk_json_path";
     }
@@ -116,7 +116,7 @@ sub read_value_from_cdk_json ($) {
         die "There are multiple $variableName lines in $cdk_json_path";
     }
 
-    unless ($desiredLines[0] =~ /"$variableName\s*":\s*"?([^"]+)"?/) {
+    unless ($desiredLines[0] =~ /"$variableName\s*"\s*:\s*"?([^"]+)"?/) {
         die "context line $desiredLines[0] does not match expected pattern to read $variableName";
     }
 
@@ -588,6 +588,11 @@ sub read_pinpoint_information($) {
     return $notifications;
 }
 
+sub is_true ($) {
+    my ($value) = @_;
+    return $value eq "1" || $value eq "true";
+}
+
 sub write_amplify_configuration() {
     print "Updating Amplify configuration\n";
 
@@ -595,11 +600,14 @@ sub write_amplify_configuration() {
         "Version" => "1.0"
     };
 
-    if (read_value_from_cdk_json("cognito.enabled") || read_value_from_cdk{"notifications_enabled"}) {
+    if (
+        is_true(read_value_from_cdk_json("cognito.enabled")) || 
+        is_true(read_value_from_cdk("notifications_enabled"))
+    ) {
         $amplify_config->{"auth"} = read_cognito_information();
     }
 
-    if (read_value_from_cdk_json("notifications.enabled")) {
+    if (is_true(read_value_from_cdk_json("notifications.enabled"))) {
         $amplify_config->{"notifications"} = read_pinpoint_information($amplify_config->{"auth"}->{"plugins"}->{"awsCognitoAuthPlugin"});        
     }
     
