@@ -76,6 +76,11 @@ if ($alternate_cdk_json_path) {
     $cdkConfig = read_alternate_cdk_json_file($alternate_cdk_json_path);
 }
 
+sub is_true ($) {
+    my ($value) = @_;
+    return $value eq "1" || $value eq "true";
+}
+
 sub read_value_from_cdk_json ($) {
     my ($variableName) = @_;
 
@@ -167,7 +172,7 @@ sub verify_profiles {
 
 if  ($compile_webapp == -1) {
     $compile_webapp = read_value_from_cdk_json("compile.webapp");
-    $compile_webapp = $compile_webapp == 0 || $compile_webapp eq "false" ? 0 : 1;
+    $compile_webapp = is_true($compile_webapp);
 }
 
 my $accountId = read_value_from_cdk_json("accountId");
@@ -586,11 +591,6 @@ sub read_pinpoint_information($) {
     };
 
     return $notifications;
-}
-
-sub is_true ($) {
-    my ($value) = @_;
-    return $value eq "1" || $value eq "true";
 }
 
 sub write_amplify_configuration() {
