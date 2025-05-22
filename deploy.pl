@@ -584,13 +584,49 @@ sub read_pinpoint_information($) {
     $cognitoAuthPlugin->{"CredentialsProvider"} = {
             "CognitoIdentity" => {
                 "Default" => {
-                    "PoolId" => "us-east-2:478be7a9-281f-4ab4-9ebb-941239754617",
+                    "PoolId" => "$identity_pool_id",
                     "Region" => "$region"
                 }
             }
     };
 
-    return $notifications;
+    return ($app_id, $notifications);
+}
+
+sub update_fcm_config($) {
+    my ($project_id) = @_;
+
+    my $parameterName = "/pinpoint/google/ApiKey";
+
+    my $configuration = `aws ssm get-parameter --name $parameterName --with-decryption --query "Parameter.Value" --output text --region $region --profile $awsProfile`;
+    unless ($? == 0) {
+        die "Failed to read parameter value with key $parameterName.  Be sure this parameter has been created in the AWS parameter store for the account $awsProfile" 
+    }
+
+    chomp($configuration);
+
+    my $cmdInput = {
+        "DefaultAuthenticationMethod" => "TOKEN",
+        "Enabled" => JSON::true
+    };
+
+    $cmdInput->{"ServiceJson"} = $configuration;
+
+    use File::Temp 'tempfile';
+
+    my ($temp_fh, $temp_filename) = tempfile(SUFFIX => '.json');
+    print $temp_fh encode_json($cmdInput);
+    close $temp_fh;
+
+    my $cmd = "aws pinpoint update-gcm-channel --application-id $project_id --gcm-channel-request file://$temp_filename --profile $awsProfile --region $region";
+    
+    my $output = `$cmd`;
+
+    unless ($? == 0) {
+        die "Failed to update the gcm channel for pinpoint project.\nCommand was $cmd\nOutput was $output";
+    }
+
+    print "Success\n";
 }
 
 sub write_amplify_configuration() {
@@ -608,7 +644,12 @@ sub write_amplify_configuration() {
     }
 
     if (is_true(read_value_from_cdk_json("notifications.enabled"))) {
-        $amplify_config->{"notifications"} = read_pinpoint_information($amplify_config->{"auth"}->{"plugins"}->{"awsCognitoAuthPlugin"});        
+        my $app_id = "";
+
+        ($app_id, $amplify_config->{"notifications"}) = read_pinpoint_information($amplify_config->{"auth"}->{"plugins"}->{"awsCognitoAuthPlugin"});    
+
+        print "\tUpdating FCM information for pinpoint application $app_id ... ";
+        update_fcm_config($app_id);
     }
     
     my $configuration = {};
