@@ -376,6 +376,53 @@ sub run_cdk_deploy {
     print "Success\n";    
 }
 
+sub run_cdk_destroy {    
+    my $cdk_command = "cdk destroy --all --force --profile $awsProfile";
+
+
+    print "Removing any docker images still in ECR ... ";
+    my $list_images_cmd = "aws ecr describe-images --repository-name $applicationName --profile $awsProfile --query imageDetails[*].imageDigest --output text";
+
+    my $imageDigests = `$list_images_cmd`;
+    if ($? != 0) {
+        die "Failed\nError listing images in ECR repository $awsProfile\nCommand used was\n$list_images_cmd\n";
+    }
+
+    my @images = split /\s/, $imageDigests;
+    @images = map {"imageDigest=$_"} @images;
+    my $imageList = join " ", @images;
+
+    my $deleteImagesCmd = "aws ecr batch-delete-image --repository-name $applicationName --profile $awsProfile --image-ids $imageList";
+
+    my $output = `$deleteImagesCmd`;
+    if ($? != 0) {
+        die "Failed\nCommand used was\n$deleteImagesCmd\n";
+    }
+    print "Success\n";
+
+    chdir ($deploy_dir);    
+    print "Destroying all resources  ... ";
+
+    open (my $pipe, "$cdk_command |") or die "Cannot execute $cdk_command: $!";
+
+    while (my $line = <$pipe>) {
+        print $line;
+    }
+
+    my $exit_status = $? >> 8;
+
+    close ($pipe);
+    
+    if ($exit_status == 0) {
+        print "Success\n"
+    }
+    else {
+        print "Failed\n";
+        print "\tCommand: $cdk_command\n";        
+        die "AWS resources not destroyed"; 
+    }
+}
+
 sub read_cognito_information() {
     print "\tListing user pools for $awsProfile ... ";
     my $list_user_pools_command = "aws cognito-idp list-user-pools --profile $awsProfile --max-results 10";
@@ -742,7 +789,12 @@ if ($mode eq $mode_update_amplify_config) {
 }
 
 if ($mode eq $mode_destroy) {
-    print STDERR "Destroy mode not yet implememnted\n";
+    print "Are you sure you want to delete the AWS resources for the account $awsProfile? (Y/n)";
+    chomp (my $confirm = <>);
+    if ($confirm =~ /y(es)?/i) {
+        run_cdk_destroy();
+    }
+    
     exit(0);
 }
 
