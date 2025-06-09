@@ -380,25 +380,40 @@ sub run_cdk_destroy {
     my $cdk_command = "cdk destroy --all --force --profile $awsProfile";
 
 
-    print "Removing any docker images still in ECR ... ";
-    my $list_images_cmd = "aws ecr describe-images --repository-name $applicationName --profile $awsProfile --query imageDetails[*].imageDigest --output text";
+    my $listRepositoriesCmd = "aws ecr describe-repositories --profile $awsProfile --query repositories[*].repositoryName --output text";
 
-    my $imageDigests = `$list_images_cmd`;
-    if ($? != 0) {
-        die "Failed\nError listing images in ECR repository $awsProfile\nCommand used was\n$list_images_cmd\n";
+    print "Checking for existing ECR repositories ... ";
+    my $repositoriesOutput = `$listRepositoriesCmd`;
+    
+    if ($repositoriesOutput eq "") {
+        print "none found\n"
     }
+    else if ($repositoriesOutput =~ /$applicationName/) {
+        print "Removing any docker images still in application's repository ... ";
+        my $list_images_cmd = "aws ecr describe-images --repository-name $applicationName --profile $awsProfile --query imageDetails[*].imageDigest --output text";
 
-    my @images = split /\s/, $imageDigests;
-    @images = map {"imageDigest=$_"} @images;
-    my $imageList = join " ", @images;
+        my $imageDigests = `$list_images_cmd`;
+        if ($? != 0) {
+            die "Failed\nError listing images in ECR repository $awsProfile\nCommand used was\n$list_images_cmd\n";
+        }
 
-    my $deleteImagesCmd = "aws ecr batch-delete-image --repository-name $applicationName --profile $awsProfile --image-ids $imageList";
+        if ($imageDigests ne "") {
+            my @images = split /\s/, $imageDigests;
+            @images = map {"imageDigest=$_"} @images;
+            my $imageList = join " ", @images;
 
-    my $output = `$deleteImagesCmd`;
-    if ($? != 0) {
-        die "Failed\nCommand used was\n$deleteImagesCmd\n";
+            my $deleteImagesCmd = "aws ecr batch-delete-image --repository-name $applicationName --profile $awsProfile --image-ids $imageList";
+
+            my $output = `$deleteImagesCmd`;
+            if ($? != 0) {
+                die "Failed\nCommand used was\n$deleteImagesCmd\n";
+            }
+        }
+        else {
+            print "(none found) ";
+        }
+        print "Success\n";
     }
-    print "Success\n";
 
     chdir ($deploy_dir);    
     print "Destroying all resources  ... ";
@@ -407,11 +422,12 @@ sub run_cdk_destroy {
 
     while (my $line = <$pipe>) {
         print $line;
-    }
-
-    my $exit_status = $? >> 8;
+    }    
 
     close ($pipe);
+
+    #  Must check $? after close
+    my $exit_status = $? >> 8;
     
     if ($exit_status == 0) {
         print "Success\n"
