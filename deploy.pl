@@ -388,7 +388,7 @@ sub run_cdk_destroy {
     if ($repositoriesOutput eq "") {
         print "none found\n"
     }
-    else if ($repositoriesOutput =~ /$applicationName/) {
+    elsif ($repositoriesOutput =~ /$applicationName/) {
         print "Removing any docker images still in application's repository ... ";
         my $list_images_cmd = "aws ecr describe-images --repository-name $applicationName --profile $awsProfile --query imageDetails[*].imageDigest --output text";
 
@@ -437,6 +437,59 @@ sub run_cdk_destroy {
         print "\tCommand: $cdk_command\n";        
         die "AWS resources not destroyed"; 
     }
+}
+
+sub cleanup_other_stacks() {        
+    print "\tChecking Cloud Formation Stacks ... ";
+
+    my $list_stacks_command = "aws cloudformation describe-stacks --query Stacks[*].StackName --output text --profile $awsProfile";
+    my $list_stacks_output = `$list_stacks_command`;
+
+    if ($? != 0) {
+        die "Error executing $list_stacks_command: $list_stacks_output";
+    }
+
+    my @stacks = split /\s/, $list_stacks_output;
+    if (@stacks > 0) {
+        print "\t\tFound ", scalar @stacks, " stacks\n";
+        for my $stack_name (@stacks) {
+            my $delete_stack_cmd = "aws cloudformation delete-stack --stack-name $stack_name --region $region --profile $awsProfile";
+            print "\t\tDeleting stack $stack_name ... ";
+            my $delete_stack_output = `$delete_stack_cmd`;
+            if ($? != 0) {
+                die "Failed to delete stack $stack_name using command $delete_stack_cmd\n$delete_stack_output\n";
+            }
+            else {
+                my $wait_for_completion_command = "aws cloudformation wait stack-delete-complete --stack-name $stack_name --region $region --profile $awsProfile";
+                my $wait_for_completion_output = `$wait_for_completion_command`;
+            }
+            print "done\n";
+        }
+    }
+    else {
+        print "\t\tNone found\n";
+    }
+    print "\tSuccess\n";
+}
+
+sub delete_bootstrap_s3_bucket() {
+    my $bucket_name = "cdk-hnb659fds-assets-$accountId-$region";
+    print "\tCleaning up S3 resource $bucket_name ... ";
+
+    # Empty the bucket first
+    my $empty_bucket_cmd = "aws s3 rm s3://$bucket_name --recursive --profile $awsProfile";
+    my $empty_bucket_output = `$empty_bucket_cmd`;
+    if ($? != 0) {
+        die "Failed to empty S3 bucket using command: $empty_bucket_cmd\n$empty_bucket_output\n";
+    }
+
+    # Then delete it
+    my $delete_bucket_cmd = "aws s3api delete-bucket --bucket $bucket_name --profile $awsProfile";
+    my $delete_bucket_output = `$delete_bucket_cmd`;
+    if ($? != 0) {
+        die "Failed to delete S3 bucket using command: $delete_bucket_cmd\n$delete_bucket_output\n";
+    }
+    print "Success\n";
 }
 
 sub read_cognito_information() {
@@ -809,7 +862,13 @@ if ($mode eq $mode_destroy) {
     chomp (my $confirm = <>);
     if ($confirm =~ /y(es)?/i) {
         run_cdk_destroy();
+
+        print "Looking for other AWS resources to clean up ...\n";
+        cleanup_other_stacks();
+        delete_bootstrap_s3_bucket();
     }
+
+    print "All AWS resources deleted\n";
     
     exit(0);
 }
