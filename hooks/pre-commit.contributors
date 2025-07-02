@@ -1,0 +1,79 @@
+#!/usr/bin/perl
+
+#  This hook will find the list of unique contributors to a project via git log 
+#  and store the output in a file named contributors.json 
+use strict;
+use JSON;
+
+my $contributors_command = "git log --pretty='%an:%ae'";
+
+open my $cmd_fh, '-|', $contributors_command or die "Cannot run command: $!";
+
+my @all_contributors;
+my %all_contributors = ();
+
+while (my $contributor = <$cmd_fh>) {
+    chomp $contributor;
+    my ($name, $email) = split /:/, $contributor;
+    $email =~ tr/[A-Z]/[a-z]/;
+    #  Computer Science will be in the list if that account modifies
+    #  pubspec.yaml to change the version number
+    next if $email eq "computerscience\@hope.edu";
+
+    if (exists $all_contributors{$email}) {
+        my $existing_name = $all_contributors{$email};
+        if (length($existing_name) < length($name)) {
+            print "Replacing $existing_name with $name for $email\n";
+            $all_contributors{$email} = $name;
+        }
+    }
+    else {
+        $all_contributors{$email} = $name;
+    }
+}
+close $cmd_fh;
+
+my $contributors_path = "mobile/assets/contributors.json";
+
+my %previous_contributors = ();
+
+if (-e $contributors_path) {    
+    # Set input record separator to undef to slurp the entire file at once
+    local $/;
+    open my $json_fh, '<', $contributors_path or die "Cannot open $contributors_path: $!";
+    my $json_text = <$json_fh>;
+    close $json_fh;
+    
+    my $json_data = decode_json($json_text);
+
+    #  $json_data will be a reference to an array, containing references to objects 
+    #  with keys email and name
+    for my $contributor_ref (@$json_data) {
+        $previous_contributors{$contributor_ref->{"email"}} = 1;
+    }
+    
+}
+
+my @new_contributors = grep { !exists $previous_contributors{$_} } keys %all_contributors;
+
+my $new_contributors_exist = 0;
+
+if (@new_contributors > 0) {
+    my $output = [];
+
+    for my $email (sort keys %all_contributors) {
+        # print $out "$all_contributors{$email}:$email\n";
+        push @$output, { 
+            "email" => $email, 
+            "name" => $all_contributors{$email}
+        };
+    }
+
+    open my $out_fh, '>', $contributors_path or die "Cannot write to $contributors_path: $!";
+    print $out_fh encode_json($output);
+    close $out_fh;
+
+    print "Adding $contributors_path to commit due to new contributor(s) existing\n";
+
+    `git add $contributors_path`;
+}
