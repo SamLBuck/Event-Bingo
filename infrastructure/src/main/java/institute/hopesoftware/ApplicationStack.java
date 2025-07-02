@@ -493,7 +493,8 @@ public class ApplicationStack extends Stack {
         }
 
         if (pinpointConfiguration.isEnabled()) {
-            vars.put("PINPOINT_APPLICATION_ID", pinpointApp.getRef());
+            vars.put("AWS_PINPOINT_APPLICATIONID", pinpointApp.getRef());
+            vars.put("AWS_PINPOINT_REGION", awsEnvironment.getRegion());
         }
 
         if (userPool != null) {
