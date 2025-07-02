@@ -354,11 +354,16 @@ sub run_cdk_deploy {
         }
     }
 
-    #  Redirect standard error to standard output so it can be easily captured
-    $cdk_command .= " 2>&1";
-
     print "Deploying resources to AWS ... ";
-    my $output = `$cdk_command`;
+    my $output = "";
+    open (my $pipe, "$cdk_command |") or die "Cannot execute $cdk_command: $!";
+
+    while (my $line = <$pipe>) {
+        print $line;
+        $output .= $line;
+    }    
+
+    close ($pipe);
 
     if ($? != 0) {
         print "\n";
