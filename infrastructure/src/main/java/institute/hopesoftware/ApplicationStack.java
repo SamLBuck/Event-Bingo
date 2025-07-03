@@ -212,7 +212,7 @@ public class ApplicationStack extends Stack {
         );
     }
 
-    private PolicyStatement getSendUserMessagesPolicyStatement() {
+    private PolicyStatement getSendMessagesPolicyStatement() {
         String resource = String.format(
             "arn:aws:mobiletargeting:%s:%s:apps/%s/messages",
             awsEnvironment.getRegion(),
@@ -220,16 +220,16 @@ public class ApplicationStack extends Stack {
             pinpointApp.getRef()
         );
 
-        PolicyStatement sendUserMessagesPolicy = PolicyStatement.Builder.create()
+        PolicyStatement sendMessagesPolicy = PolicyStatement.Builder.create()
             .effect(Effect.ALLOW)
             .actions(
-                List.of("mobiletargeting:SendUsersMessages")
+                List.of("mobiletargeting:SendMessages")
             )
             .resources(
                 List.of(resource)
             )
             .build();
-        return sendUserMessagesPolicy;        
+        return sendMessagesPolicy;        
     }
 
     private List<PolicyStatement> getUnauthenticatedRolePolicies() {
@@ -603,7 +603,7 @@ public class ApplicationStack extends Stack {
 
         Role ecsTaskRole = roleBuilder.build();
         if (pinpointConfiguration.isEnabled()) {
-            ecsTaskRole.addToPolicy(getSendUserMessagesPolicyStatement());
+            ecsTaskRole.addToPolicy(getSendMessagesPolicyStatement());
         }
 
         String dockerRepositoryUrl = null;

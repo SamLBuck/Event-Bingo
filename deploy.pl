@@ -26,17 +26,20 @@ my $compile_server = 1;
 my $build_docker_image = 1;
 my $update_load_balancer_dns = 1;
 
+my $temporary_password = "";
 
 my $mode_deploy = "deploy";
 my $mode_destroy = "destroy";
 my $mode_update_amplify_config = "update-amplify-config";
+my $mode_create_users = "create-cognito-users";
 
 my $mode = $mode_deploy;
 
 my @mode_options = (
   $mode_deploy,
   $mode_destroy,
-  $mode_update_amplify_config
+  $mode_update_amplify_config,
+  $mode_create_users
 );
 
 my $alternate_cdk_json_path = "";
@@ -57,10 +60,11 @@ sub read_alternate_cdk_json_file($) {
 GetOptions('webapp!' => \$compile_webapp, 'server!' => \$compile_server, 'mode=s' => \$mode,
     'update-dns!' => \$update_load_balancer_dns, 'cdk-config=s' => \$alternate_cdk_json_path,
     'build_docker_image!' => \$build_docker_image, 'context=s@' => \@context_variables,     
+    'temporary-password=s' => \$temporary_password,
     'help' => \$show_help);
 
 if ($show_help) {
-    print "Usage: perl deploy.pl [--mode mode] [--no-webapp] [--no-server] [--no-build_docker_image] [--no-update-dns] [--cdk-config config.json] [--help]\n\n";
+    print "Usage: perl deploy.pl [--mode mode] [--no-webapp] [--no-server] [--no-build_docker_image] [--no-update-dns] [--cdk-config config.json] [--temporary-password password] [--help]\n\n";
     print "Options for --mode are ", join(",", @mode_options), "\n";
     print "Default mode is $mode_deploy\n";
     print "Both the management web application and the backend API server will be built by default\n";
@@ -497,8 +501,7 @@ sub delete_bootstrap_s3_bucket() {
     print "Success\n";
 }
 
-sub read_cognito_information() {
-    print "\tListing user pools for $awsProfile ... ";
+sub get_user_pool_id() {
     my $list_user_pools_command = "aws cognito-idp list-user-pools --profile $awsProfile --max-results 10";
     my $output = `$list_user_pools_command`;
     if ($? != 0) {
@@ -529,10 +532,104 @@ sub read_cognito_information() {
         die "Could not find a user pool with the name $applicationName";
     }
 
+    return $user_pool_id;
+}
+
+sub get_temporary_cognito_password() {
+    if ($temporary_password ne "") {
+        return $temporary_password;
+    }
+    else {
+        require Term::ReadKey;
+        print "Enter temporary password for new Cognito users: ";
+        Term::ReadKey::ReadMode('noecho');
+        chomp($temporary_password = <STDIN>);
+        Term::ReadKey::ReadMode('restore');
+        print "\n";
+        return $temporary_password;
+    }
+}
+
+sub create_cognito_users() {
+    my $user_pool_id = get_user_pool_id();
+
+    print "Checking for cognito users to create: ";
+    my $users = read_value_from_cdk_json("cognito.users");
+    my @new_users = ();
+
+    if (@$users == 0) {
+        print "No users exists in cdk.json\n";
+        return;
+    }
+    else {
+        print scalar @$users, " user(s) exist in cdk.json\n";
+        my $list_users_cmd = 
+            "aws cognito-idp list-users " .
+            "--user-pool-id $user_pool_id " .
+            "--region $region " .
+            "--profile $awsProfile " . 
+            "--query \"Users[*].Attributes[?Name=='email'].Value\" " .
+            "--output text ";
+        my @existing_users = split /\n/, `$list_users_cmd`;
+        for my $userhash (@$users) {
+            my $email_address = $userhash->{"email_address"};
+            my @already_exists = grep /$email_address/, @existing_users;
+            unless (@already_exists) {
+                push @new_users, $userhash;
+            }
+        }        
+    }
+
+    if (@new_users == 0) {
+        print "All users already exist\n";
+        return;
+    }
+    else {
+        print scalar @new_users, " new user(s) to create\n";
+    }
+
+    my $temp_password = get_temporary_cognito_password();
+
+    for my $userhash (@new_users) {
+        my $given_name = $userhash->{"given_name"};
+        my $family_name = $userhash->{"family_name"};
+        my $email_address = $userhash->{"email_address"};
+
+        my $create_user_command = 
+            "aws cognito-idp admin-create-user " .
+            "--user-pool-id $user_pool_id " .
+            "--username $email_address " .
+            "--temporary-password $temp_password " .
+            "--user-attributes " .
+            "Name=email,Value=$email_address " .
+            "Name=given_name,Value=$given_name " .
+            "Name=family_name,Value=$family_name " .
+            "Name=email_verified,Value=true " .
+            "--message-action SUPPRESS " .
+            "--profile $awsProfile " .
+            "--region $region";
+
+        my $output = `$create_user_command`;
+
+        unless ($? == 0) {
+            print STDERR "Failed to create cognito user for $email_address\n";
+            print STDERR "$output\n";
+            exit(1);
+        }
+
+        print "\tCreated cognito account for $email_address\n";
+    }
+}
+
+sub read_cognito_information() {
+    print "\tListing user pools for $awsProfile ... ";
+
+    my $user_pool_id = get_user_pool_id();
+
     print "\tGetting details about $user_pool_id ... ";
     my $describe_user_pool_cmd = "aws cognito-idp describe-user-pool --profile $awsProfile --user-pool-id $user_pool_id";
 
-    $output = `$describe_user_pool_cmd`;
+    my $output = `$describe_user_pool_cmd`;
     die "\nFailed to execute $describe_user_pool_cmd" unless ($? == 0); 
     print " Success\n";
 
@@ -862,6 +959,11 @@ if ($mode eq $mode_update_amplify_config) {
     exit(0);    
 }
 
+if ($mode eq $mode_create_users) {
+    create_cognito_users();
+    exit(0);
+}
+
 if ($mode eq $mode_destroy) {
     print "Are you sure you want to delete the AWS resources for the account $awsProfile? (Y/n)";
     chomp (my $confirm = <>);
@@ -896,5 +998,7 @@ delete_existing_docker_image($docker_image_tag-1)
 
 update_load_balancer_name()
     unless (!$update_load_balancer_dns);
+
+create_cognito_users();
 
 write_amplify_configuration();
