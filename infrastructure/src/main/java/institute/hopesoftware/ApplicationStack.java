@@ -476,7 +476,8 @@ public class ApplicationStack extends Stack {
     private void createService() {
         Map<String, String> vars = new HashMap<String, String>();
         vars.put("AWS_REGION", awsEnvironment.getRegion());
-        
+        vars.put("TZ", "America/New_York");
+
         if (dbConfiguration.isEnabled()) {
             String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s",
                 dbInstance.getAttrEndpointAddress(),
