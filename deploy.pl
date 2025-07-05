@@ -541,7 +541,7 @@ sub get_temporary_cognito_password() {
     }
     else {
         require Term::ReadKey;
-        print "Enter temporary password for new Cognito users: ";
+        print "\tEnter temporary password for new Cognito users: ";
         Term::ReadKey::ReadMode('noecho');
         chomp($temporary_password = <STDIN>);
         Term::ReadKey::ReadMode('restore');
@@ -550,13 +550,50 @@ sub get_temporary_cognito_password() {
     }
 }
 
+sub get_cognito_groups_for_user ($$) {
+    my ($email_address, $user_pool_id) = @_;
+    my $cmd = 
+        "aws cognito-idp admin-list-groups-for-user " .
+        "--username $email_address " .
+        "--user-pool-id $user_pool_id " .
+        '--query "Groups[*].GroupName" ' .
+        "--output text " .
+        "--region $region " .
+        "--profile $awsProfile";
+
+    my $output = `$cmd`;
+    unless ($? == 0) {
+        die "Failed to execute $cmd to list user's groups";
+    }
+
+    return split /\s/, $output;
+}
+
+sub remove_user_from_group($$$) {
+    my ($email_address, $group_name, $user_pool_id) = @_;
+
+    my $cmd = 
+        "aws cognito-idp admin-remove-user-from-group " .
+        "--user-pool-id $user_pool_id " .
+        "--username $email_address " .
+        "--group-name $group_name " .
+        "--region $region " .
+        "--profile $awsProfile";
+
+    my $output = `$cmd`;
+
+    unless ($? == 0) {
+        die "Failed to delete user $email_address from group $group_name\nOutput was $output\nCommand used was $cmd\n";
+    }    
+}
+
 sub create_cognito_users() {
     my $user_pool_id = get_user_pool_id();
+    my @existing_users = ();
 
     print "Checking for cognito users to create: ";
     my $users = read_value_from_cdk_json("cognito.users");
-    my @new_users = ();
-
+    
     if (@$users == 0) {
         print "No users exists in cdk.json\n";
         return;
@@ -570,54 +607,77 @@ sub create_cognito_users() {
             "--profile $awsProfile " . 
             "--query \"Users[*].Attributes[?Name=='email'].Value\" " .
             "--output text ";
-        my @existing_users = split /\n/, `$list_users_cmd`;
-        for my $userhash (@$users) {
-            my $email_address = $userhash->{"email_address"};
-            my @already_exists = grep /$email_address/, @existing_users;
-            unless (@already_exists) {
-                push @new_users, $userhash;
-            }
-        }        
-    }
-
-    if (@new_users == 0) {
-        print "All users already exist\n";
-        return;
-    }
-    else {
-        print scalar @new_users, " new user(s) to create\n";
+        @existing_users = split /\n/, `$list_users_cmd`;           
     }
 
     my $temp_password = get_temporary_cognito_password();
 
-    for my $userhash (@new_users) {
+    for my $userhash (@$users) {        
         my $given_name = $userhash->{"given_name"};
         my $family_name = $userhash->{"family_name"};
         my $email_address = $userhash->{"email_address"};
 
-        my $create_user_command = 
-            "aws cognito-idp admin-create-user " .
-            "--user-pool-id $user_pool_id " .
-            "--username $email_address " .
-            "--temporary-password $temp_password " .
-            "--user-attributes " .
-            "Name=email,Value=$email_address " .
-            "Name=given_name,Value=$given_name " .
-            "Name=family_name,Value=$family_name " .
-            "Name=email_verified,Value=true " .
-            "--message-action SUPPRESS " .
-            "--profile $awsProfile " .
-            "--region $region";
+        my @already_exists = grep /$email_address/, @existing_users;
+        if (@already_exists == 0) {
+            print "\tCreating cognito account for $email_address ... ";
 
-        my $output = `$create_user_command`;
+            my $create_user_command = 
+                "aws cognito-idp admin-create-user " .
+                "--user-pool-id $user_pool_id " .
+                "--username $email_address " .
+                "--temporary-password $temp_password " .
+                "--user-attributes " .
+                "Name=email,Value=$email_address " .
+                "Name=given_name,Value=$given_name " .
+                "Name=family_name,Value=$family_name " .
+                "Name=email_verified,Value=true " .
+                "--message-action SUPPRESS " .
+                "--profile $awsProfile " .
+                "--region $region";
 
-        unless ($? == 0) {
-            print STDERR "Failed to create cognito user for $email_address\n";
-            print STDERR "$output\n";
-            exit(1);
+            my $output = `$create_user_command`;
+
+            unless ($? == 0) {
+                print STDERR "Failed to create cognito user for $email_address\n";
+                print STDERR "$output\n";
+                exit(1);
+            }
+
+            print " Success\n";
+        }
+        else {
+            print "\t$email_address:  account already exists\n";
         }
 
-        print "\tCreated cognito account for $email_address\n";
+        if (exists $userhash->{"groups"}) {
+            my @groups = @{$userhash->{"groups"}};
+            my @current_groups = get_cognito_groups_for_user($email_address, $user_pool_id);            
+
+            my @new_groups = grep { my $g = $_; not grep { $_ eq $g } @current_groups } @groups;
+
+            for my $group (@new_groups) {
+                print "\t\tAdding $email_address to group $group ...";
+                my $add_to_group_command = 
+                    "aws cognito-idp admin-add-user-to-group " .
+                    "--user-pool-id $user_pool_id " .
+                    "--username $email_address " .
+                    "--group-name $group " .
+                    "--region $region " .
+                    "--profile $awsProfile";
+                
+                my $output = `$add_to_group_command`;
+
+                print " Success\n";
+            }
+
+            my @deleted_groups = grep { my $g = $_; not grep { $_ eq $g } @groups } @current_groups;
+
+            for my $group (@deleted_groups) {
+                print "\t\tDeleting $email_address from group $group ... ";
+                remove_user_from_group ($email_address, $group, $user_pool_id);
+                print "Success\n";
+            }
+        }                
     }
 }
 
