@@ -113,30 +113,21 @@ sub read_value_from_cdk_json ($) {
     }
 
     my $cdk_json_path = catfile($deploy_dir, "cdk.json");
-    open (my $cdk_json_file, $cdk_json_path)
-        or die "Cannot open $cdk_json_path to read $variableName";
+    my $json_text = read_file($cdk_json_path);
+    my $context = decode_json($json_text)->{context};
 
-    chomp (my @lines = <$cdk_json_file>);
-    my @desiredLines = grep /"$variableName\s*"\s*:/, @lines;
-    if (@desiredLines == 0) {
-        die "Could not find $variableName line in $cdk_json_path";
+    if (!exists $context->{$variableName}) {
+        die "Could not find $variableName in $cdk_json_path";
     }
-    if (@desiredLines > 1) {
-        die "There are multiple $variableName lines in $cdk_json_path";
+    else {
+        my $value = $context->{$variableName};
+        if ($value eq "default") {
+            print STDERR "The value of the property $variableName in cdk.json is still set to \"default\"\n";
+            print STDERR "You must change this to the appropriate value\n";
+            exit(1);
+        }
+        return $value;
     }
-
-    unless ($desiredLines[0] =~ /"$variableName\s*"\s*:\s*"?([^"]+)"?/) {
-        die "context line $desiredLines[0] does not match expected pattern to read $variableName";
-    }
-
-    my $value = $1;
-    $value =~ s/,$//;
-    if ($value eq "default") {
-        print STDERR "The value of the property $variableName in cdk.json is still set to \"default\"\n";
-        print STDERR "You must change this to the appropriate value\n";
-        exit(1);
-    }
-    return $value;
 }
 
 sub check_if_profile_exists ($) {
