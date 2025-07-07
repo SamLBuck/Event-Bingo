@@ -45,4 +45,4 @@ app.*.map.json
 /android/app/release
 
 #  Files in this folder will be generated from other locations
-server\src\main\resources\static
+server/src/main/resources/static
