@@ -194,6 +194,8 @@ sub compile_webapp () {
 }
 
 sub compile_server () {
+    copy_website_to_server_static();
+    
     chdir ($server_dir)
         or die "Could not change directories to the server folder ($server_dir)";
 
@@ -1054,7 +1056,7 @@ compile_server() unless (!$compile_server);
 
 log_into_ecr();
 
-copy_website_to_server_static();
+
 
 my $docker_image_tag = build_and_push_docker_image($build_docker_image)
   unless (!$build_docker_image);
