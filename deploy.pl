@@ -999,6 +999,24 @@ sub update_load_balancer_name {
     }
 }
 
+sub copy_website_to_server_static() {
+    my $website_source = catfile ($root_dir, "website");
+    unless (-e $website_source) {
+        return;
+    }
+
+    my $target_dir = catfile ($server_dir, "src", "main", "resources", "static");
+    use File::Path qw(make_path);
+
+    unless (-d $target_dir) {
+        make_path($target_dir) or die "Failed to create target directory $target_dir: $!";
+    }
+
+    use File::Copy::Recursive qw(dircopy);
+
+    dircopy($website_source, $target_dir) or die "Failed to copy website files from $website_source to $target_dir: $!";
+}
+
 unless (-e $amplify_configuration_dir) {
     mkdir ($amplify_configuration_dir) or die "Failed to create amplify configuration directory $amplify_configuration_dir";
 }
@@ -1035,6 +1053,8 @@ compile_webapp() unless (!$compile_webapp);
 compile_server() unless (!$compile_server);
 
 log_into_ecr();
+
+copy_website_to_server_static();
 
 my $docker_image_tag = build_and_push_docker_image($build_docker_image)
   unless (!$build_docker_image);

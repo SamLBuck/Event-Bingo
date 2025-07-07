@@ -1,0 +1,1 @@
+The files in this folder will be copied into `server\src\main\resources\static` so that they can be served from the application's subdomain (e.g. **project.hopesoftware.institute**) whenever the deployment script (`deploy.pl`) is executed.
