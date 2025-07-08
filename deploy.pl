@@ -195,7 +195,7 @@ sub compile_webapp () {
 
 sub compile_server () {
     copy_website_to_server_static();
-    
+
     chdir ($server_dir)
         or die "Could not change directories to the server folder ($server_dir)";
 
@@ -936,7 +936,7 @@ sub write_amplify_configuration() {
     chdir ($root_dir);
 
     open(my $fh, '>', $amplify_configuration_file) or die "Could not open file '$amplify_configuration_file' for writing ($!)";
-    print $fh to_json($configuration, {'pretty'=>1});
+    print $fh to_json($configuration, {'pretty'=>1, 'canonical'=>1});
     close($fh);
     print "Success\n";
     
