@@ -8,6 +8,23 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  Container _button(String text) {
+    return Container(
+      margin: const EdgeInsets.all(16.0),
+      child: ElevatedButton(
+        onPressed: () {
+          // Navigate to create game screen
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.lightBlueAccent,
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
+          textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        child: Text(text),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,51 +59,13 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  margin: const EdgeInsets.all(16.0),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Navigate to create game screen
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.lightBlueAccent,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 32,
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    child: const Text('Create Board'),
-                  ),
-                ),
+                _button('Create board'),
                 Container(
                   margin: EdgeInsets.symmetric(
                     horizontal: MediaQuery.of(context).size.width * 0.1,
                   ),
                 ),
-                Container(
-                  margin: const EdgeInsets.all(16.0),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Navigate to create game screen
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.lightBlueAccent,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 32,
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    child: const Text('Join with key'),
-                  ),
-                ),
+                _button('Join with key'),
               ],
             ),
           ],
