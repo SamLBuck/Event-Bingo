@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>   
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+
+                      <changeSet id="create-table-board" author="MS">
+
+                        <createTable tableName="board" schemaName="inspirepractice">
+                            <column name="id" type="int" autoIncrement="true" startWith="100">
+                                <constraints primaryKey="true" nullable="false"/>
+                            </column>
+                            <column name="boardname" type="VARCHAR(255)">
+                                <constraints nullable="false"/>
+                            </column>
+                            <column name="ceatedby" type="varchar(255)">
+                                <constraints nullable="false"/>
+                            </column>
+                            <column name="description" type="text">
+                                <constraints nullable="true"/>
+                            </column>
+                            <column name="datecreated" type="datetime">
+                                <constraints nullable="false"/>
+                            </column>
+                        </createTable>
+                      </changeSet>
+
+                      <changeSet id="insert-board-default-values" author="MS">
+                        <addDefaultValue tableName="board" columnName="datecreated" defaultValueDate="current_timestamp"/>
+
+                        <rollback>
+                            <dropDefaultValue tableName="board" columnName="datecreated"/>
+                        </rollback>
+                      </changeSet>
+</databaseChangeLog>

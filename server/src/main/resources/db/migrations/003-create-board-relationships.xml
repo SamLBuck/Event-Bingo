@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>   
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+
+                      <changeSet id="create-board-relationships" author="MS">
+
+                        <createTable tableName="board_boardquestion" schemaName="inspirepractice">
+                            <column name="boardquestion_id" type="int" >
+                                <constraints primaryKey="true" nullable="false"/>
+                            </column>
+                            <column name="board_id" type="int" >
+                                <constraints nullable="false"/>
+                            </column>
+                        </createTable>
+                      </changeSet>
+
+                      <changeSet id="board_fk" author="MS">
+                        <addForeignKeyConstraint 
+                        baseTableName="board_boardquestion" baseColumnNames="board_id" 
+                        constraintName="link-board-to-boardquestion" 
+                        referencedTableName="board" referencedColumnNames="id" 
+                        onDelete="CASCADE" onUpdate="CASCADE"
+                        />
+
+                        <rollback>
+                            <dropForeignKeyConstraint baseTableName="board_boardquestion" constraintName="link-board-to-boardquestion" />
+                        </rollback>
+                      </changeSet>
+
+                      <changeSet id="boardquestion_fk" author="Ms">
+                        <addForeignKeyConstraint 
+                        baseTableName="board_boardquestion" baseColumnNames="boardquestion_id" 
+                        constraintName="link-boardquestion-to-board" 
+                        referencedTableName="boardquestion" referencedColumnNames="id"
+                        onDelete="CASCADE" onUpdate="CASCADE"
+                        />
+
+                        <rollback>
+                            <dropForeignKeyConstraint baseTableName="board_boardquestion" constraintName="link-boardquestion-to-board" />
+                        </rollback>
+                      </changeSet>
+
+</databaseChangeLog>
