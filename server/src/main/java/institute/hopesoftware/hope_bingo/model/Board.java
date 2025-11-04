@@ -1,4 +1,4 @@
-package institute.hopesoftware.hope_bingo;
+package institute.hopesoftware.hope_bingo.model;
 
 import java.util.Set;
 
