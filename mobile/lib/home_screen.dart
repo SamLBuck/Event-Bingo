@@ -50,23 +50,36 @@ class _HomeScreenState extends State<HomeScreen> {
               margin: const EdgeInsets.all(16.0),
               width: 1000,
               height: 500,
-              child: Center(
-                child: SearchBar(
-                  controller: _searchController,
-                  leading: const Icon(Icons.search),
-                  trailing: <Widget>[
-                    IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: Colors.black, width: 4),
+                      ),
+                    ),
+                    child: SearchBar(
+                      shape: WidgetStateProperty.all<OutlinedBorder>(
+                        RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                      ),
+                      controller: _searchController,
+                      leading: const Icon(Icons.search),
+                      trailing: <Widget>[
+                        IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                          },
+                        ),
+                      ],
+                      hintText: 'Search for board',
+                      onChanged: (String value) {
+                        debugPrint('The text has changed to: $value');
                       },
                     ),
-                  ],
-                  hintText: 'Search for board',
-                  onChanged: (String value) {
-                    debugPrint('The text has changed to: $value');
-                  },
-                ),
+                  ),
+                ],
               ),
             ),
 
