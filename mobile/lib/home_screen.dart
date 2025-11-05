@@ -8,6 +8,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
   Container _button(String text) {
     return Container(
       margin: const EdgeInsets.all(16.0),
@@ -49,9 +51,21 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 1000,
               height: 500,
               child: Center(
-                child: Text(
-                  'Game browser placeholder',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                child: SearchBar(
+                  controller: _searchController,
+                  leading: const Icon(Icons.search),
+                  trailing: <Widget>[
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                      },
+                    ),
+                  ],
+                  hintText: 'Search for board',
+                  onChanged: (String value) {
+                    debugPrint('The text has changed to: $value');
+                  },
                 ),
               ),
             ),
