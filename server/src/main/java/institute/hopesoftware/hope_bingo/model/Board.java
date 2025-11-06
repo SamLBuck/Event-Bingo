@@ -11,6 +11,8 @@ public class Board {
     private String[][] questionGrid;
     public static final int GRID_SIZE = 5;
 
+    //@TODO refactor to store questions as a Set only, using composeBoard to fill the grid when needed
+
     public Board(String boardAuthor, String boardName, String[][] questionGrid) {
         this.boardAuthor = boardAuthor;
         this.boardName = boardName;
