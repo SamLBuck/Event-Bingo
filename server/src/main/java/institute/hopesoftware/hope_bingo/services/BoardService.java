@@ -16,17 +16,6 @@ public class BoardService {
         this.boardRepository = boardRepository;
     }
 
-    public Board getBoardById(Integer id) {
-        return boardRepository.findById(id).orElse(null);
-    }
-
-    public Board saveBoard(Board board) {
-        return boardRepository.save(board);
-    }
-
-    public void deleteBoard(Integer id) {
-        boardRepository.deleteById(id);
-    }
-
+    
     
 }
