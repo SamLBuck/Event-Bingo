@@ -12,6 +12,58 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _noPasswordChecked = false;
   bool _notFullChecked = false;
 
+  // TODO: Query fromm server
+  List<GameListEntry> gamesList = [
+    GameListEntry(
+      title: 'Test Board',
+      author: 'Kyle',
+      hasPassword: true,
+      maxPlayers: 5,
+    ),
+    GameListEntry(
+      title: 'Sample Board',
+      author: 'Alice',
+      hasPassword: false,
+      maxPlayers: 10,
+    ),
+    GameListEntry(
+      title: 'Fun Board',
+      author: 'Bob',
+      hasPassword: true,
+      maxPlayers: 8,
+    ),
+    GameListEntry(
+      title: 'Adventure Board',
+      author: 'Eve',
+      hasPassword: false,
+      maxPlayers: 6,
+    ),
+    GameListEntry(
+      title: 'Cusack Board',
+      author: 'Joe',
+      hasPassword: true,
+      maxPlayers: 15,
+    ),
+    GameListEntry(
+      title: 'Mcfall Board',
+      author: 'Max',
+      hasPassword: true,
+      maxPlayers: 4,
+    ),
+    GameListEntry(
+      title: 'Olegbemi Board',
+      author: 'Steven',
+      hasPassword: false,
+      maxPlayers: 6,
+    ),
+    GameListEntry(
+      title: 'Cusack Board again',
+      author: 'Joe Again',
+      hasPassword: true,
+      maxPlayers: 15,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -64,6 +116,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const Text('Not full', style: TextStyle(fontSize: 18)),
                       ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: gamesList.length,
+                      itemBuilder: (context, index) {
+                        return gamesList[index];
+                      },
                     ),
                   ),
                 ],
@@ -144,6 +205,71 @@ class _HomeScreenState extends State<HomeScreen> {
           textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         child: Text(text),
+      ),
+    );
+  }
+}
+
+class GameListEntry extends StatelessWidget {
+  final String title;
+  final String author;
+  final bool hasPassword;
+  final int maxPlayers;
+  int currentPlayers = 0;
+
+  GameListEntry({
+    super.key,
+    required this.title,
+    required this.author,
+    required this.hasPassword,
+    required this.maxPlayers,
+  });
+
+  // Thanks Copilot for helping with this method.
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text('Author: $author'),
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    hasPassword ? Icons.lock : Icons.lock_open,
+                    color: hasPassword ? Colors.red : Colors.green,
+                  ),
+                  Text(hasPassword ? 'Private' : 'Public'),
+                ],
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.person),
+                  Text('$currentPlayers / $maxPlayers'),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
