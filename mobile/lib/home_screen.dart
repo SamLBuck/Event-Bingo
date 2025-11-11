@@ -210,20 +210,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class GameListEntry extends StatelessWidget {
+class GameListEntry extends StatefulWidget {
   final String title;
   final String author;
   final bool hasPassword;
   final int maxPlayers;
-  int currentPlayers = 0;
 
-  GameListEntry({
+  const GameListEntry({
     super.key,
     required this.title,
     required this.author,
     required this.hasPassword,
     required this.maxPlayers,
   });
+
+  @override
+  State<GameListEntry> createState() => _GameListEntryState();
+}
+
+class _GameListEntryState extends State<GameListEntry> {
+  int currentPlayers = 0;
 
   // Thanks Copilot for helping with this method.
   @override
@@ -240,13 +246,13 @@ class GameListEntry extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title,
+                widget.title,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text('Author: $author'),
+              Text('Author: ${widget.author}'),
             ],
           ),
           Column(
@@ -255,16 +261,16 @@ class GameListEntry extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    hasPassword ? Icons.lock : Icons.lock_open,
-                    color: hasPassword ? Colors.red : Colors.green,
+                    widget.hasPassword ? Icons.lock : Icons.lock_open,
+                    color: widget.hasPassword ? Colors.red : Colors.green,
                   ),
-                  Text(hasPassword ? 'Private' : 'Public'),
+                  Text(widget.hasPassword ? 'Private' : 'Public'),
                 ],
               ),
               Row(
                 children: [
                   const Icon(Icons.person),
-                  Text('$currentPlayers / $maxPlayers'),
+                  Text('$currentPlayers / ${widget.maxPlayers}'),
                 ],
               ),
             ],
