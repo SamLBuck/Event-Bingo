@@ -3,6 +3,23 @@
 This README would normally document whatever steps are necessary to get your application up and running.
 
 
+
+
+### API Controller structure 
+
+GameController
+* mapping "/api/games" 
+* GET findGameById(int key)
+* POST updateBoardState(int x, int y)
+* GET listGames()
+* POST joinGame(int uuid, string playername, string password, int key)
+* POST newGame(int uuid, string hostplayername, string password, boolean isPublic)
+
+BoardController 
+* GET getBoardList(int uuid)
+* GET getBoard(int key)
+* POST newBoard(Set<String> questions, boolean private, String name)
+
 ### database setup procedure ###
 
 * make sure docker is running and the proper environment variables are set 
@@ -14,12 +31,6 @@ This README would normally document whatever steps are necessary to get your app
 * if you need to undo a change, execute 'liquibase rollback-count x' where x is the number of changesets you want to undo. remember that this is a stack operation. you can't undo
 a changeset without first undoing all later changesets
 
-
-### UML Diagram ###
-
-The UML diagram of our backend structure is accessible here: https://www.mermaidchart.com/app/projects/cb2ce2f9-4192-4cbe-a448-ffa9df06efd6/diagrams/59f3022d-255b-4f41-be22-ebfc38281f7e/share/invite/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb2N1bWVudElEIjoiNTlmMzAyMmQtMjU1Yi00ZjQxLWJlMjItZWJmYzM4MjgxZjdlIiwiYWNjZXNzIjoiRWRpdCIsImlhdCI6MTc2MjQ0MDY3NH0.LoeVQdBksTSxVDP3QdDPnSuFIsygUrjO-NVAXtDPf84
-
-please update the UML as we refine and improve our ideas 
 
 ### How do I get set up? ###
 
