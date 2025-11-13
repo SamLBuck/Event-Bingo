@@ -7,9 +7,9 @@ class PlayScreen extends StatefulWidget {
   State<PlayScreen> createState() => _PlayScreenState();
 }
 
-//void main() {
-//  runApp(MaterialApp(home: const PlayScreen()));
-//}
+void main() {
+  runApp(MaterialApp(home: const PlayScreen()));
+}
 
 class _PlayScreenState extends State<PlayScreen> {
   // These will be where the tiles fetched from backend will be;
@@ -91,7 +91,10 @@ class Board extends StatelessWidget {
 
   Board({super.key, required this.tiles});
 
-  final Map<int, BingoTile> board = {};
+  final List<List<BingoTile?>> board = List.generate(
+    5,
+    (_) => List.filled(5, null),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -108,13 +111,13 @@ class Board extends StatelessWidget {
       // inserts the "FREE" square before adding the next one
       if (newRow.length == 2 && newCol.length == 2) {
         newTile = BingoTile(label: "FREE", free: true, board: board);
-        board[newRow.length + newCol.length * 10] = newTile;
+        board[newCol.length][newRow.length] = newTile;
         newRow.add(newTile);
       }
       // board keys:
       // 0-4, 10-14, ... 40-44
       newTile = BingoTile(label: tile, free: false, board: board);
-      board[newRow.length + newCol.length * 10] = newTile;
+      board[newCol.length][newRow.length] = newTile;
       newRow.add(newTile);
     }
     newCol.add(Row(children: newRow));
@@ -128,7 +131,7 @@ class Board extends StatelessWidget {
 class BingoTile extends StatefulWidget {
   final String label;
   final bool free;
-  final Map<int, BingoTile> board;
+  final List<List<BingoTile?>> board;
   bool checked = false;
 
   BingoTile({
@@ -177,7 +180,7 @@ class _BingoTileState extends State<BingoTile> {
     for (int row = 0; row < 5; row++) {
       bool rowBingo = true;
       for (int col = 0; col < 5; col++) {
-        var tile = widget.board[row * 10 + col];
+        var tile = widget.board[row][col];
         if (tile == null || !tile.checked) {
           rowBingo = false;
           break;
@@ -190,7 +193,7 @@ class _BingoTileState extends State<BingoTile> {
     for (int col = 0; col < 5; col++) {
       bool colBingo = true;
       for (int row = 0; row < 5; row++) {
-        var tile = widget.board[row * 10 + col];
+        var tile = widget.board[row][col];
         if (tile == null || !tile.checked) {
           colBingo = false;
           break;
@@ -202,7 +205,7 @@ class _BingoTileState extends State<BingoTile> {
     // dia
     bool diag1Bingo = true;
     for (int i = 0; i < 5; i++) {
-      var tile = widget.board[i * 10 + i];
+      var tile = widget.board[i][i];
       if (tile == null || !tile.checked) {
         diag1Bingo = false;
         break;
@@ -213,7 +216,7 @@ class _BingoTileState extends State<BingoTile> {
     // dia 2
     bool diag2Bingo = true;
     for (int i = 0; i < 5; i++) {
-      var tile = widget.board[i * 10 + (4 - i)];
+      var tile = widget.board[i][4 - i];
       if (tile == null || !tile.checked) {
         diag2Bingo = false;
         break;
