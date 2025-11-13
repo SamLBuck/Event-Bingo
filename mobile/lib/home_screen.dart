@@ -19,48 +19,56 @@ class _HomeScreenState extends State<HomeScreen> {
       author: 'Kyle',
       hasPassword: true,
       maxPlayers: 5,
+      gameKey: 'ABCD1234',
     ),
     GameListEntry(
       title: 'Sample Board',
       author: 'Alice',
       hasPassword: false,
       maxPlayers: 10,
+      gameKey: 'EFGH5678',
     ),
     GameListEntry(
       title: 'Fun Board',
       author: 'Bob',
       hasPassword: true,
       maxPlayers: 8,
+      gameKey: 'IJKL9012',
     ),
     GameListEntry(
       title: 'Adventure Board',
       author: 'Eve',
       hasPassword: false,
       maxPlayers: 6,
+      gameKey: 'MNOP3456',
     ),
     GameListEntry(
       title: 'Cusack Board',
       author: 'Joe',
       hasPassword: true,
       maxPlayers: 15,
+      gameKey: 'QRST7890',
     ),
     GameListEntry(
       title: 'Mcfall Board',
       author: 'Max',
       hasPassword: true,
       maxPlayers: 4,
+      gameKey: 'UVWX1122',
     ),
     GameListEntry(
       title: 'Olegbemi Board',
       author: 'Steven',
       hasPassword: false,
       maxPlayers: 6,
+      gameKey: 'YZAB3344',
     ),
     GameListEntry(
       title: 'Cusack Board again',
       author: 'Joe Again',
       hasPassword: true,
       maxPlayers: 15,
+      gameKey: 'CDEF5566',
     ),
   ];
 
@@ -213,6 +221,7 @@ class GameListEntry extends StatefulWidget {
   final String author;
   final bool hasPassword;
   final int maxPlayers;
+  final String gameKey;
 
   const GameListEntry({
     super.key,
@@ -220,6 +229,7 @@ class GameListEntry extends StatefulWidget {
     required this.author,
     required this.hasPassword,
     required this.maxPlayers,
+    required this.gameKey,
   });
 
   @override
@@ -240,17 +250,28 @@ class _GameListEntryState extends State<GameListEntry> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          SizedBox(
+            width: 380,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text('Author: ${widget.author}'),
+              ],
+            ),
+          ),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                widget.title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                widget.gameKey,
+                style: const TextStyle(fontStyle: FontStyle.italic),
               ),
-              Text('Author: ${widget.author}'),
             ],
           ),
           Column(
