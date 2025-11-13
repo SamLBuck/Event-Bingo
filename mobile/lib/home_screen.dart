@@ -147,9 +147,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     'Create board',
                     () => debugPrint("Create board pressed"),
                   ),
-                  _button('Join game', () {
-                    debugPrint("Join game pressed");
-                  }),
+                  _button(
+                    'Create game',
+                    () => debugPrint("Create game pressed"),
+                  ),
                   _button('Join with key', openDialog),
                 ],
               ),
