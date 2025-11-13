@@ -130,24 +130,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _button(
-                  'Create board',
-                  () => debugPrint("Create board pressed"),
-                ),
-                Container(
-                  margin: EdgeInsets.symmetric(
-                    horizontal: MediaQuery.of(context).size.width * 0.1,
+            SizedBox(
+              width: 1000,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _button(
+                    'Create board',
+                    () => debugPrint("Create board pressed"),
                   ),
-                ),
-                _button(
-                  'Join with key',
-                  () => debugPrint("Join with key pressed"),
-                ),
-              ],
+                  _button('Join game', () => debugPrint("Join game pressed")),
+                  _button(
+                    'Join with key',
+                    () => debugPrint("Join with key pressed"),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
