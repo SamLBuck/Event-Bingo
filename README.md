@@ -3,22 +3,23 @@
 This README would normally document whatever steps are necessary to get your application up and running.
 
 
+### currently done ### 
+* play screen mock
+* game controller
+* game browser mock
+* board controller
+* board editor mock
 
+## TODO ###
 
-### API Controller structure 
+* game service
+* board service
+* repository implementation
+* finalize DB migrations
+* start game screen
+* actual api calls
+* changing screens in ui
 
-GameController
-* mapping "/api/games" 
-* GET findGameById(int key)
-* POST updateBoardState(int x, int y)
-* GET listGames()
-* POST joinGame(int uuid, string playername, string password, int key)
-* POST newGame(int uuid, string hostplayername, string password, boolean isPublic)
-
-BoardController 
-* GET getBoardList(int uuid)
-* GET getBoard(int key)
-* POST newBoard(Set<String> questions, boolean private, String name)
 
 ### database setup procedure ###
 
