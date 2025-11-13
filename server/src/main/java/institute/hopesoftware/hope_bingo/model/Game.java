@@ -15,6 +15,7 @@ public class Game {
     private ArrayList<Player> players;
     private static Board gameBoard;
     private HashMap<Integer, Board> boardStates;
+    private Integer key;
 
     
     

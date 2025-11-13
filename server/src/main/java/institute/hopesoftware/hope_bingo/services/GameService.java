@@ -25,7 +25,7 @@ public class GameService {
 
     private ArrayList<Game> games = new ArrayList<>();
 
-    public Game createNewGame(Integer boardId, String hostPlayerName) {
+    public Game createNewGame(Integer boardId, Integer playerUUID, String hostPlayerName) {
         Game newGame = new Game();
         Board boardTemplate = boardRepository.findById(boardId).orElse(null);
         if (boardTemplate == null) {
@@ -41,5 +41,11 @@ public class GameService {
         return newGame;
     }
 
+    public Game joinGame(Integer gameKey, Integer playerUUID, String playerName, String password) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'joinGame'");
+    }
+
+    
 
 }
