@@ -147,11 +147,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     'Create board',
                     () => debugPrint("Create board pressed"),
                   ),
-                  _button('Join game', () => debugPrint("Join game pressed")),
-                  _button(
-                    'Join with key',
-                    () => debugPrint("Join with key pressed"),
-                  ),
+                  _button('Join game', () {
+                    debugPrint("Join game pressed");
+                  }),
+                  _button('Join with key', openDialog),
                 ],
               ),
             ),
@@ -160,6 +159,28 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  Future openDialog() => showDialog(
+    context: context,
+    builder:
+        (context) => AlertDialog(
+          title: const Text('Join game with key'),
+          content: TextField(
+            decoration: InputDecoration(hintText: 'Enter a game code'),
+          ),
+          actions: [
+            // TODO(Kyle): Implement join game functionality
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Join'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+  );
 
   SearchBar _searchBar() {
     return SearchBar(
