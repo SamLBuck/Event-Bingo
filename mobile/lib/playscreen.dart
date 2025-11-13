@@ -7,6 +7,10 @@ class PlayScreen extends StatefulWidget {
   State<PlayScreen> createState() => _PlayScreenState();
 }
 
+//void main() {
+//  runApp(MaterialApp(home: const PlayScreen()));
+//}
+
 class _PlayScreenState extends State<PlayScreen> {
   // These will be where the tiles fetched from backend will be;
   // placed in the order
@@ -59,7 +63,12 @@ class _PlayScreenState extends State<PlayScreen> {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [Board(tiles: tiles)],
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [Board(tiles: tiles)],
+            ),
+          ],
         ),
       ),
     );
@@ -104,10 +113,11 @@ class Board extends StatelessWidget {
       }
       // board keys:
       // 0-4, 10-14, ... 40-44
-      newTile = BingoTile(label: tile, free: true, board: board);
+      newTile = BingoTile(label: tile, free: false, board: board);
       board[newRow.length + newCol.length * 10] = newTile;
       newRow.add(newTile);
     }
+    newCol.add(Row(children: newRow));
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: newCol,
