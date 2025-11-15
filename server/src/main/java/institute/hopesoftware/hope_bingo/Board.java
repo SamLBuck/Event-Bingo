@@ -10,13 +10,19 @@ public class Board {
     private String boardName;
     private String[][] questionGrid;
     public static final int GRID_SIZE = 5;
+    private String id;
 
     public Board(String boardAuthor, String boardName, String[][] questionGrid) {
         this.boardAuthor = boardAuthor;
         this.boardName = boardName;
         this.questionGrid = questionGrid;
+        this.id = java.util.UUID.randomUUID().toString();
     }
 
+    
+    public String getId() {
+        return id;
+    }   
 
     public void composeBoard(Set<String> questions) {
 
