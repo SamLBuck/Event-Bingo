@@ -1,0 +1,335 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final size = 5;
+    final tiles = List<String>.generate(
+      size * size,
+      (i) => '${i ~/ size + 1}${i % size + 1}',
+    );
+
+    return MaterialApp(
+      title: 'Hope Bingo – Tiles',
+      debugShowCheckedModeBanner: false,
+      routes: {
+        '/':
+            (_) => BoardTilesPage(
+              size: size,
+              tiles: tiles,
+              title: 'Board Designer',
+            ),
+        '/board': (_) => const BoardDetailPage(),
+      },
+      initialRoute: '/',
+    );
+  }
+}
+
+class BoardTilesPage extends StatefulWidget {
+  const BoardTilesPage({
+    super.key,
+    required this.size,
+    required this.tiles,
+    this.title = 'Board',
+  });
+
+  final int size;
+  final List<String> tiles;
+  final String title;
+
+  @override
+  State<BoardTilesPage> createState() => _BoardTilesPageState();
+}
+
+class _BoardTilesPageState extends State<BoardTilesPage> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _keyCtrl;
+  late final List<String> _tiles;
+  late final int _size;
+
+  bool _isPublic = true;
+  bool _keyProtected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _size = widget.size;
+    _tiles = List<String>.from(widget.tiles);
+    _nameCtrl = TextEditingController(text: widget.title);
+    _keyCtrl = TextEditingController(text: '');
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _keyCtrl.dispose();
+    super.dispose();
+  }
+
+  int get _filledCount => _tiles.where((t) => t.trim().isNotEmpty).length;
+
+  Future<void> _editTile(BuildContext context, int index) async {
+    final controller = TextEditingController(text: _tiles[index]);
+    final result = await showDialog<String>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Put an event'),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              maxLines: 3,
+              maxLength: 40,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (v) => Navigator.of(ctx).pop(v),
+              decoration: const InputDecoration(
+                hintText: 'Enter tile text',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(null),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(''),
+                child: const Text('Clear'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(controller.text),
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+    );
+    if (result != null) {
+      setState(() => _tiles[index] = result);
+    }
+  }
+
+  void _onCreatePressed() {
+    final boardName = _nameCtrl.text.trim();
+    final accessKey = _keyCtrl.text.trim();
+
+    if (_keyProtected && accessKey.isEmpty) {
+      showDialog<void>(
+        context: context,
+        builder:
+            (ctx) => AlertDialog(
+              title: const Text('Access key required'),
+              content: const Text(
+                'This board is marked as key protected. Please enter an access key before creating.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+      );
+      return;
+    }
+
+    Navigator.of(context).pushNamed(
+      '/board',
+      arguments: {
+        'id': 'demo_${DateTime.now().millisecondsSinceEpoch}',
+        'name': boardName.isEmpty ? 'Untitled Board' : boardName,
+        'isPublic': _isPublic,
+        'keyProtected': _keyProtected,
+        'accessKey': _keyProtected ? accessKey : null, // “store” it in args
+        'filled': _filledCount,
+        'size': _size,
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    assert(_tiles.length == _size * _size);
+
+    return Scaffold(
+      appBar: AppBar(title: Text(_nameCtrl.text)),
+      body: Row(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final n = _size;
+                  const spacing = 8.0;
+
+                  final gridW = constraints.maxWidth;
+                  final gridH = constraints.maxHeight;
+
+                  final tileW = (gridW - spacing * (n - 1)) / n;
+                  final tileH = (gridH - spacing * (n - 1)) / n;
+
+                  final ratio = tileW / tileH; // width / height
+
+                  return GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: n,
+                      crossAxisSpacing: spacing,
+                      mainAxisSpacing: spacing,
+                      childAspectRatio: ratio,
+                    ),
+                    itemCount: _tiles.length,
+                    itemBuilder: (context, index) {
+                      final text = _tiles[index];
+                      return InkWell(
+                        onTap: () => _editTile(context, index),
+                        onLongPress: () => setState(() => _tiles[index] = ''),
+                        borderRadius: BorderRadius.circular(8),
+                        child: _Tile(text: text),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+
+          SizedBox(
+            width: 320,
+            child: Material(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  const Text(
+                    'Game Settings',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _nameCtrl,
+                    decoration: const InputDecoration(labelText: 'Board name'),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    title: const Text('Public'),
+                    value: _isPublic,
+                    onChanged: (v) => setState(() => _isPublic = v),
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Key protected'),
+                    value: _keyProtected,
+                    onChanged:
+                        (v) => setState(() => _keyProtected = v ?? false),
+                  ),
+                  if (_keyProtected) ...[
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _keyCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Access key',
+                        hintText: 'Key to join the board',
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.check),
+              label: const Text('Create'),
+              onPressed: _onCreatePressed, // use the validated handler
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Tile extends StatelessWidget {
+  const _Tile({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final isEmpty = text.trim().isEmpty;
+    return Material(
+      color: Colors.grey.shade100,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: Colors.grey.shade400),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Text(
+            isEmpty ? '—' : text,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              fontStyle: isEmpty ? FontStyle.italic : FontStyle.normal,
+              color: isEmpty ? Colors.grey.shade500 : null,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class BoardDetailPage extends StatelessWidget {
+  const BoardDetailPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final args = ModalRoute.of(context)!.settings.arguments as Map?;
+    final id = args?['id'] ?? 'unknown';
+    final name = args?['name'] ?? 'Untitled Board';
+    final isPublic = args?['isPublic'] as bool? ?? true;
+    final keyProtected = args?['keyProtected'] as bool? ?? false;
+    final accessKey = args?['accessKey'] as String?;
+    final filled = args?['filled'];
+    final size = args?['size'];
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Board')),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Text('id: $id'),
+            Text('name: $name'),
+            Text('public: $isPublic'),
+            Text('keyProtected: $keyProtected'),
+            Text('accessKey: ${accessKey ?? '(none)'}'),
+            Text('tiles filled: $filled / ${size is int ? size * size : '?'}'),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('Back to Designer'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
