@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-HopeBingoApplication<hope-bingo>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "institute.hopesoftware.hope_bingo.HopeBingoApplication",
+            "projectName": "hope-bingo",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
