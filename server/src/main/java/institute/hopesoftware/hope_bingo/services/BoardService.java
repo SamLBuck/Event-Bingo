@@ -1,0 +1,19 @@
+package institute.hopesoftware.hope_bingo.services;
+
+import java.util.List;
+
+import institute.hopesoftware.hope_bingo.Board;
+
+public class BoardService {
+
+    public Board newGame(List<String> questions, Boolean private1, String gameTitle) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'newGame'");
+    }
+
+    public List<Board> getBoards() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getBoards'");
+    }
+    
+}
