@@ -6,17 +6,20 @@
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
 
-                      <changeSet id="create-table-board-question" author="MS">
+<changeSet id="create-boardtile-fk" author="MS">
+  <addForeignKeyConstraint 
+  baseTableName="tile" baseColumnNames="id" 
+  constraintName="link-tile-to-board" 
+  referencedTableName="board" referencedColumnNames="id"
+  onDelete="CASCADE" onUpdate="CASCADE"
+  />
+</changeSet>
 
-                        <createTable tableName="boardquestion" schemaName="inspirepractice">
-                            <column name="id" type="int">
-                                <constraints primaryKey="true" nullable="false"/>
-                            </column>
-                            <column name="questiontext" type="text">
-                                <constraints nullable="false"/>
-                            </column>
-                        </createTable>
-                      </changeSet>
-
+<changeSet id="create-boardcreator-fk" author="MS">
+  <addForeignKeyConstraint 
+  baseTableName="board" baseColumnNames="creator_id" 
+  constraintName="link-board-to-creator" 
+  referencedTableName="player" referencedColumnNames="id" />
+</changeSet>
 
 </databaseChangeLog>
