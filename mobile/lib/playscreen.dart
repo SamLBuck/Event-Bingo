@@ -48,6 +48,11 @@ class _PlayScreenState extends State<PlayScreen> {
     "24",
   ];
 
+  // how many of each player(s) are 0 away, 1 away, 2 away ... 5 away
+  List<int> player_tiles_left = [0, 3, 1, 5, 1, 4];
+
+  String board_name = "Name";
+
   //Since randomization occurs on the backend, need to check tile count.
 
   @override
@@ -64,9 +69,36 @@ class _PlayScreenState extends State<PlayScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Text(
+              board_name,
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [Board(tiles: tiles)],
+            ),
+            Divider(),
+            ListView.builder(
+              itemCount: 5,
+              shrinkWrap: true,
+              physics: const ClampingScrollPhysics(),
+              itemBuilder: (BuildContext context, int index) {
+                return Padding(
+                  padding: EdgeInsets.all(4.0),
+                  child:
+                      index == 0
+                          ? player_tiles_left[index] == 0
+                              ? Text(
+                                "No One has reached Bingo yet, be the first one!",
+                              )
+                              : Text("${2} Player(s) have reached Bingo!")
+                          : player_tiles_left[index] == 0
+                          ? null
+                          : Text(
+                            "${player_tiles_left[index]} Player(s) are ${index} away!",
+                          ),
+                );
+              },
             ),
           ],
         ),
@@ -159,7 +191,7 @@ class _BingoTileState extends State<BingoTile> {
       // clicking a tile checks it, clicking again unchecks (in case of mistake)
       widget.checked = !widget.checked;
       if (widget.checked) {
-        if (checkBingo()) {
+        if (checkBingo() == 5) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text(
@@ -175,55 +207,54 @@ class _BingoTileState extends State<BingoTile> {
     });
   }
 
-  bool checkBingo() {
+  int checkBingo() {
+    int maxCount = 0;
+
     // row
     for (int row = 0; row < 5; row++) {
-      bool rowBingo = true;
+      int count = 0;
       for (int col = 0; col < 5; col++) {
         var tile = widget.board[row][col];
-        if (tile == null || !tile.checked) {
-          rowBingo = false;
-          break;
+        if (tile != null && tile.checked) {
+          count++;
         }
       }
-      if (rowBingo) return true;
+      if (count > maxCount) maxCount = count;
     }
 
     // cols
     for (int col = 0; col < 5; col++) {
-      bool colBingo = true;
+      int count = 0;
       for (int row = 0; row < 5; row++) {
         var tile = widget.board[row][col];
-        if (tile == null || !tile.checked) {
-          colBingo = false;
-          break;
+        if (tile != null && tile.checked) {
+          count++;
         }
       }
-      if (colBingo) return true;
+      if (count > maxCount) maxCount = count;
     }
 
     // dia
-    bool diag1Bingo = true;
+    int diag1Count = 0;
     for (int i = 0; i < 5; i++) {
       var tile = widget.board[i][i];
-      if (tile == null || !tile.checked) {
-        diag1Bingo = false;
-        break;
+      if (tile != null && tile.checked) {
+        diag1Count++;
       }
     }
-    if (diag1Bingo) return true;
+    if (diag1Count > maxCount) maxCount = diag1Count;
 
     // dia 2
-    bool diag2Bingo = true;
+    int diag2Count = 0;
     for (int i = 0; i < 5; i++) {
       var tile = widget.board[i][4 - i];
-      if (tile == null || !tile.checked) {
-        diag2Bingo = false;
-        break;
+      if (tile != null && tile.checked) {
+        diag2Count++;
       }
     }
-    if (diag2Bingo) return true;
-    return false;
+    if (diag2Count > maxCount) maxCount = diag2Count;
+
+    return maxCount;
   }
 
   @override
@@ -235,7 +266,7 @@ class _BingoTileState extends State<BingoTile> {
         height: 70,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: widget.checked ? Colors.green : Colors.white,
+          color: widget.checked ? Colors.orange : Colors.lightBlueAccent,
           border: Border.all(color: Colors.black, width: 2),
         ),
         child: Text(
