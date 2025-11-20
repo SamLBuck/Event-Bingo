@@ -1,47 +1,11 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final size = 5;
-    final tiles = List<String>.generate(
-      size * size,
-      (i) => '${i ~/ size + 1}${i % size + 1}',
-    );
-
-    return MaterialApp(
-      title: 'Hope Bingo – Tiles',
-      debugShowCheckedModeBanner: false,
-      routes: {
-        '/':
-            (_) => BoardTilesPage(
-              size: size,
-              tiles: tiles,
-              title: 'Board Designer',
-            ),
-        '/board': (_) => const BoardDetailPage(),
-      },
-      initialRoute: '/',
-    );
-  }
-}
-
 class BoardTilesPage extends StatefulWidget {
-  const BoardTilesPage({
-    super.key,
-    required this.size,
-    required this.tiles,
-    this.title = 'Board',
-  });
-
-  final int size;
-  final List<String> tiles;
+  BoardTilesPage({super.key, this.title = 'Board'});
+  final tiles = List<String>.generate(
+    5 * 5,
+    (i) => '${i ~/ 5 + 1}${i % 5 + 1}',
+  );
   final String title;
 
   @override
@@ -60,7 +24,7 @@ class _BoardTilesPageState extends State<BoardTilesPage> {
   @override
   void initState() {
     super.initState();
-    _size = widget.size;
+    _size = 5;
     _tiles = List<String>.from(widget.tiles);
     _nameCtrl = TextEditingController(text: widget.title);
     _keyCtrl = TextEditingController(text: '');

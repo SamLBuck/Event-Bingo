@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/board-designer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -143,10 +144,13 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _button(
-                    'Create board',
-                    () => debugPrint("Create board pressed"),
-                  ),
+                  _button('Create board', () {
+                    debugPrint("Create board pressed");
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => BoardTilesPage()),
+                    );
+                  }),
                   _button(
                     'Create game',
                     () => debugPrint("Create game pressed"),
