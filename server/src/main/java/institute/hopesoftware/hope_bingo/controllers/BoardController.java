@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import institute.hopesoftware.hope_bingo.Board;
+import institute.hopesoftware.hope_bingo.model.Board;
 import institute.hopesoftware.hope_bingo.services.BoardService;
 import institute.hopesoftware.hope_bingo.services.Requests.NewBoardRequest;
 import institute.hopesoftware.hope_bingo.services.Responses.GetBoardsResponse;

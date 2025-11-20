@@ -1,6 +1,6 @@
 package institute.hopesoftware.hope_bingo.model;
 
-import java.util.HashSet;
+import java.util.Set;
 
 @lombok.Getter
 @lombok.Setter
@@ -8,15 +8,36 @@ public class Board {
     
     private String boardAuthor;
     private String boardName;
-    private HashSet<String> questionGrid;
+    private String[][] questionGrid;
+    public static final int GRID_SIZE = 5;
+    private String id;
 
-    //@TODO refactor to store questions as a Set only, using composeBoard to fill the grid when needed
-
-    public Board(String boardAuthor, String boardName) {
+    public Board(String boardAuthor, String boardName, String[][] questionGrid) {
         this.boardAuthor = boardAuthor;
         this.boardName = boardName;
-        this.questionGrid = new HashSet<String>();
+        this.questionGrid = questionGrid;
+        this.id = java.util.UUID.randomUUID().toString();
     }
 
+    
+    public String getId() {
+        return id;
+    }   
 
+    public void composeBoard(Set<String> questions) {
+
+
+        if (questions.size() < (GRID_SIZE * GRID_SIZE) -1) {
+            throw new IllegalArgumentException("Not enough questions to fill the board.");
+        }
+
+        String[] questionArray = questions.toArray(new String[24]);
+        int index = 0;
+
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                questionGrid[i][j] = questionArray[index++];
+            }
+        }
+    }
 }
