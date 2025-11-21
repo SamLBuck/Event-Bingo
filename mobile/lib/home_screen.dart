@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/board-designer.dart';
-import 'package:mobile/create_game_screen.dart';
-import 'package:mobile/create_game_screen.dart';
+import 'package:mobile/create_game_widget.dart';
+import 'package:mobile/create_game_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

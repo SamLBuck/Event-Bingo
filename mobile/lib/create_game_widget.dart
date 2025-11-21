@@ -38,6 +38,13 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
                 const Text(
                   'Name',
                   style: TextStyle(fontWeight: FontWeight.bold),
