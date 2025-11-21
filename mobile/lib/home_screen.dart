@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/board-designer.dart';
 import 'package:mobile/create_game_screen.dart';
+import 'package:mobile/create_game_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -154,12 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   }),
                   _button('Create game', () {
                     debugPrint("Create game pressed");
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CreateGameScreen(),
-                      ),
-                    );
+                    showCreateGameDialog(context);
                   }),
                   _button('Join with key', openDialog),
                 ],
