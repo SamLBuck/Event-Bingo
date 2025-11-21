@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>   
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+
+                      <changeSet id="createTable-board" author="MS">
+                        <createTable tableName="board">
+                            <column name="id" type="integer" autoIncrement="true" startWith="100" >
+                                <constraints nullable="false" primaryKey="true"/>
+                            </column>
+                            <column name="creator_id" type="integer">
+                                <constraints nullable="false"/>
+                            </column>
+                            <column name="name" type="varchar(255)">
+                                <constraints nullable="false"/>
+                            </column>
+                            <column name="description" type="text">
+                                <constraints nullable="true"/>
+                            </column>
+                        </createTable>
+                      </changeSet>
+
+
+                      <changeSet id="createTable-tile" author="MS">
+                        <createTable tableName="tile">
+                            <column name="id" type="integer">
+                                <constraints primaryKey="true" nullable="false"/>
+                            </column>
+                            <column name="text" type="text">
+                                <constraints nullable="false"/>
+                            </column>
+                        </createTable>
+                      </changeSet>
+
+                      <changeSet id="createTable-player" author="MS">
+                        <createTable tableName="player">
+                            <column name="id" type="integer" autoIncrement="true" startWith="100">
+                                <constraints primaryKey="true" nullable="false"/>
+                            </column>
+                            <column name="displayname" type="varchar(255)">
+                                <constraints nullable="false"/>
+                            </column>
+                        </createTable>
+                      </changeSet>
+</databaseChangeLog>
