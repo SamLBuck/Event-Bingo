@@ -64,7 +64,7 @@ class _BoardTilesPageState extends State<BoardTilesPage> {
                 child: const Text('Cancel'),
               ),
               TextButton(
-                onPressed: () => Navigator.of(ctx).pop(''),
+                onPressed: () => controller.text = '',
                 child: const Text('Clear'),
               ),
               FilledButton(
