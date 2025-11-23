@@ -3,6 +3,21 @@
 This README would normally document whatever steps are necessary to get your application up and running.
 
 
+### steps for liquibase updates  ## 
+
+* from the inspire-practice directory
+* dpush server\main\resources\db
+* set liquibase_command_password=
+* set liquibase_command_url=
+* (the above aren't nessecary if you aren't in 392)
+* liquibase update
+
+### to ensure the spring server runs properly ##
+
+* cd server
+* mvnw clean install -U -DskipTests 
+
+
 ### currently done ### 
 * play screen mock
 * game controller
@@ -13,7 +28,7 @@ This README would normally document whatever steps are necessary to get your app
 ## TODO ###
 
 * game service
-* board service
+* board service 
 * repository implementation
 * finalize DB migrations
 * start game screen
