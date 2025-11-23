@@ -2,27 +2,51 @@ package institute.hopesoftware.hope_bingo.model;
 
 import java.util.Set;
 
+
+
+import io.micrometer.common.lang.NonNull;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Transient;
+
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
 @lombok.Getter
 @lombok.Setter
+@Entity
 public class Board {
     
-    private String boardAuthor;
-    private String boardName;
-    private String[][] questionGrid;
-    public static final int GRID_SIZE = 5;
-    private String id;
 
-    public Board(String boardAuthor, String boardName, String[][] questionGrid) {
+    @ToString.Include
+    @NonNull
+    @EqualsAndHashCode.Include
+    private String boardAuthor;
+
+    @EqualsAndHashCode.Include
+    @NonNull
+    @ToString.Include
+    private String boardName;
+
+    @Transient
+    private String[][] questionGrid;
+
+    @Transient
+    public static final int GRID_SIZE = 5;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    public Board(String boardAuthor, String boardName) {
         this.boardAuthor = boardAuthor;
         this.boardName = boardName;
-        this.questionGrid = questionGrid;
-        this.id = java.util.UUID.randomUUID().toString();
+        this.questionGrid = new String[GRID_SIZE][GRID_SIZE];
     }
 
-    
-    public String getId() {
-        return id;
-    }   
 
     public void composeBoard(Set<String> questions) {
 

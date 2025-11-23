@@ -2,7 +2,9 @@ spring:
     datasource:
         url: jdbc:postgresql://localhost:4481/postgres
         username: postgres
-        password: postgres481
+        password: postgres123
         driver-class-name: org.postgresql.Driver 
     h2:
         console.enabled: false
+    liquibase:
+        change-log: classpath:db/changelog-root.xml

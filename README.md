@@ -13,7 +13,7 @@ This README would normally document whatever steps are necessary to get your app
 ## TODO ###
 
 * game service
-* board service
+* board service 
 * repository implementation
 * finalize DB migrations
 * start game screen
