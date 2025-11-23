@@ -13,5 +13,4 @@ public interface BoardRepository extends CrudRepository<Board, Integer> {
 
     public List<Board> findAllByBoardAuthor(String boardAuthor);
 
-    public Set<String> getAllQuestions();
 }
