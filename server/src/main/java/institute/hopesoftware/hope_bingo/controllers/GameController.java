@@ -39,30 +39,15 @@ public class GameController {
     }
     
 
-    @PostMapping(value="/{key}/")
-    public ResponseEntity<JoinGameResponse> postMethodName(@RequestBody JoinGameRequest request, @PathVariable Integer key) {
-        
-        Integer playerUUID = request.playerUUID();
-        String playerName = request.playerName();
-        String password = request.password();
-        Integer gameKey = key;
 
-        gameService.joinGame(gameKey, playerUUID, playerName, password);
-
-        JoinGameResponse response = new JoinGameResponse(gameKey);
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping(value="")
+    @GetMapping(value="/gamelist/")
     public ResponseEntity<ListGamesResponse> listGames() {
         List<Game> games = gameService.getGames();
         ListGamesResponse response = new ListGamesResponse(games);
         return ResponseEntity.ok(response);
 
-    }
-    
-    
-    
+    }    
+        
 }
 
 
