@@ -8,18 +8,12 @@
 
 <changeSet id="create-boardtile-fk" author="MS">
   <addForeignKeyConstraint 
-  baseTableName="tile" baseColumnNames="id" 
+  baseTableName="question" baseColumnNames="board_id" 
   constraintName="link-tile-to-board" 
   referencedTableName="board" referencedColumnNames="id"
   onDelete="CASCADE" onUpdate="CASCADE"
   />
 </changeSet>
 
-<changeSet id="create-boardcreator-fk" author="MS">
-  <addForeignKeyConstraint 
-  baseTableName="board" baseColumnNames="creator_id" 
-  constraintName="link-board-to-creator" 
-  referencedTableName="player" referencedColumnNames="id" />
-</changeSet>
 
 </databaseChangeLog>
