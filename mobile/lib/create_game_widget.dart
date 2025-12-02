@@ -64,14 +64,14 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
                 const SizedBox(height: 20),
 
                 const Text(
-                  'Access Key',
+                  'Password (optional)',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 TextFormField(
                   controller: accessKeyController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    hintText: 'Enter access key (optional)',
+                    hintText: 'Enter Password (optional)',
                   ),
                 ),
                 const SizedBox(height: 20),

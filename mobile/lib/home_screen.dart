@@ -157,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     debugPrint("Create game pressed");
                     showCreateGameDialog(context);
                   }),
-                  _button('Join with key', openDialog),
+                  _button('Join with game code', openDialog),
                 ],
               ),
             ),
