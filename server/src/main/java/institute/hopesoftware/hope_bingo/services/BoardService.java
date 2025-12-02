@@ -10,7 +10,7 @@ import institute.hopesoftware.hope_bingo.model.Board;
 @Service
 public class BoardService {
 
-    public Board newGame(List<String> questions, Boolean private1, String gameTitle) {
+    public Board newBoard(List<String> questions, Boolean private1, String gameTitle) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'newGame'");
     }
