@@ -46,6 +46,9 @@ public class GameService {
         throw new UnsupportedOperationException("Unimplemented method 'joinGame'");
     }
 
+    public ArrayList<Game> getGames() {
+        return games;
+    }
     
 
 }
