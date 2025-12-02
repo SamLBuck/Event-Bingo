@@ -3,15 +3,17 @@ package institute.hopesoftware.hope_bingo.repositories;
 import org.springframework.data.repository.CrudRepository;
 import institute.hopesoftware.hope_bingo.model.Board;
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface BoardRepository extends CrudRepository<Board, Integer> {
-    
+import institute.hopesoftware.hope_bingo.model.DbBoard;
 
-    public Board findByBoardName(String boardName);
+@Repository
+public interface BoardRepository extends JpaRepository<DbBoard, Integer> {
 
-    public List<Board> findAllByBoardAuthor(String boardAuthor);
+    Optional<DbBoard> findByBoardName(String boardName);
 
-    public Set<String> getAllQuestions();
+    List<DbBoard> findAllByCreatedBy(String createdBy);
 }
