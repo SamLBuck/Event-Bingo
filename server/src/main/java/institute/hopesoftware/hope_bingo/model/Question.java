@@ -1,39 +1,36 @@
 package institute.hopesoftware.hope_bingo.model;
 
-import java.util.HashSet;
-import java.util.Set;
-
-
-
 import io.micrometer.common.lang.NonNull;
-
+import jakarta.annotation.Nonnull;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 @lombok.Getter
 @lombok.Setter
 @Entity
-public class Board {
-    
-
-    @ToString.Include
-    @NonNull
-    private String boardAuthor;
-
-    @NonNull
-    @OneToMany(mappedBy = "board")
-    private Set<Question> questions = new HashSet<Question>();
-
-    @NonNull
-    @ToString.Include
-    private String boardName;
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@RequiredArgsConstructor
+public class Question {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Integer Id;
+
+    @NonNull
+    @ManyToOne
+    private Board board;
+
+    @ToString.Include
+    @Nonnull
+    private String text;
+
+    
 }

@@ -6,7 +6,7 @@
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
 
-<changeSet id="create-boardtile-fk" author="MS">
+<changeSet id="create-boardquestion-fk" author="MS">
   <addForeignKeyConstraint 
   baseTableName="question" baseColumnNames="board_id" 
   constraintName="link-tile-to-board" 

@@ -12,10 +12,8 @@ import institute.hopesoftware.hope_bingo.services.gameRequests.*;
 import institute.hopesoftware.hope_bingo.services.gameResponses.*;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 
@@ -32,11 +30,12 @@ public class GameController {
     public ResponseEntity<NewGameResponse> newGame(@RequestBody NewGameRequest request) {
         Integer boardId = request.boardId();
         String hostPlayerName = request.hostPlayerName();
-        Integer playerUUID = request.playerUUID();
-        Game Game = gameService.createNewGame(boardId, playerUUID, hostPlayerName);
+        Boolean isPublic = request.isPublic();
+        String password = request.password();
+        Game Game = gameService.createNewGame(boardId, hostPlayerName, isPublic, password);
 
 
-        NewGameResponse response = new NewGameResponse(Game.getKey());
+        NewGameResponse response = new NewGameResponse(Game.getGameCode());
         return ResponseEntity.ok(response);
         
     }
