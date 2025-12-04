@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/home_screen.dart';
+import 'package:mobile/playscreen.dart';
 
 class BoardTilesPage extends StatefulWidget {
   BoardTilesPage({super.key, this.title = 'Board'});
@@ -14,12 +16,9 @@ class BoardTilesPage extends StatefulWidget {
 
 class _BoardTilesPageState extends State<BoardTilesPage> {
   late final TextEditingController _nameCtrl;
-  late final TextEditingController _keyCtrl;
+  late final TextEditingController _descCtrl;
   late final List<String> _tiles;
   late final int _size;
-
-  bool _isPublic = true;
-  bool _keyProtected = false;
 
   @override
   void initState() {
@@ -27,13 +26,13 @@ class _BoardTilesPageState extends State<BoardTilesPage> {
     _size = 5;
     _tiles = List<String>.from(widget.tiles);
     _nameCtrl = TextEditingController(text: widget.title);
-    _keyCtrl = TextEditingController(text: '');
+    _descCtrl = TextEditingController(text: '');
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
-    _keyCtrl.dispose();
+    _descCtrl.dispose();
     super.dispose();
   }
 
@@ -79,42 +78,75 @@ class _BoardTilesPageState extends State<BoardTilesPage> {
     }
   }
 
-  void _onCreatePressed() {
-    final boardName = _nameCtrl.text.trim();
-    final accessKey = _keyCtrl.text.trim();
+  Future<void> _onCreatePressed() async {
+    final rawName = _nameCtrl.text.trim();
+    final boardName = rawName.isEmpty ? 'Untitled Board' : rawName;
+    final boardDesc = _descCtrl.text.trim();
 
-    if (_keyProtected && accessKey.isEmpty) {
-      showDialog<void>(
-        context: context,
-        builder:
-            (ctx) => AlertDialog(
-              title: const Text('Access key required'),
-              content: const Text(
-                'This board is marked as key protected. Please enter an access key before creating.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
+    final trimmedTiles = _tiles.map((t) => t.trim()).toList();
+    final nonEmpty = trimmedTiles.where((t) => t.isNotEmpty).toList();
+
+    if (nonEmpty.length != _size * _size) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please fill ${_size * _size} tiles before creating.'),
+        ),
       );
       return;
     }
 
-    Navigator.of(context).pushNamed(
-      '/board',
-      arguments: {
-        'id': 'demo_${DateTime.now().millisecondsSinceEpoch}',
-        'name': boardName.isEmpty ? 'Untitled Board' : boardName,
-        'isPublic': _isPublic,
-        'keyProtected': _keyProtected,
-        'accessKey': _keyProtected ? accessKey : null, // “store” it in args
-        'filled': _filledCount,
-        'size': _size,
+    final unique = nonEmpty.toSet();
+    if (unique.length != nonEmpty.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Each tile must be unique (no duplicate events).'),
+        ),
+      );
+      return;
+    }
+
+    final payload = {
+      'boardAuthor': 'TODO_AUTHOR',
+      'boardName': boardName,
+      'description': boardDesc,
+      'questions': nonEmpty,
+    };
+
+    final summary = [
+      'Name: $boardName',
+      'Description: ${boardDesc.isEmpty ? 'none' : boardDesc}',
+      'Tiles filled: ${nonEmpty.length}',
+      'Author: ${payload['boardAuthor']}',
+    ].join('\n');
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Create this board?'),
+          content: Text(summary),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Confirm'),
+            ),
+          ],
+        );
       },
     );
+
+    if (confirmed == true) {
+      // TODO: send payload
+
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (context) => HomeScreen()));
+    }
   }
 
   @override
@@ -172,7 +204,7 @@ class _BoardTilesPageState extends State<BoardTilesPage> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   const Text(
-                    'Game Settings',
+                    'Board Settings',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
@@ -182,27 +214,13 @@ class _BoardTilesPageState extends State<BoardTilesPage> {
                     onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 12),
-                  SwitchListTile(
-                    title: const Text('Public'),
-                    value: _isPublic,
-                    onChanged: (v) => setState(() => _isPublic = v),
-                  ),
-                  CheckboxListTile(
-                    title: const Text('Key protected'),
-                    value: _keyProtected,
-                    onChanged:
-                        (v) => setState(() => _keyProtected = v ?? false),
-                  ),
-                  if (_keyProtected) ...[
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _keyCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Access key',
-                        hintText: 'Key to join the board',
-                      ),
+                  TextField(
+                    controller: _descCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Board Description',
                     ),
-                  ],
+                    onChanged: (_) => setState(() {}),
+                  ),
                 ],
               ),
             ),
@@ -218,7 +236,7 @@ class _BoardTilesPageState extends State<BoardTilesPage> {
             child: ElevatedButton.icon(
               icon: const Icon(Icons.check),
               label: const Text('Create'),
-              onPressed: _onCreatePressed, // use the validated handler
+              onPressed: _onCreatePressed,
             ),
           ),
         ),
@@ -266,9 +284,6 @@ class BoardDetailPage extends StatelessWidget {
     final args = ModalRoute.of(context)!.settings.arguments as Map?;
     final id = args?['id'] ?? 'unknown';
     final name = args?['name'] ?? 'Untitled Board';
-    final isPublic = args?['isPublic'] as bool? ?? true;
-    final keyProtected = args?['keyProtected'] as bool? ?? false;
-    final accessKey = args?['accessKey'] as String?;
     final filled = args?['filled'];
     final size = args?['size'];
 
@@ -281,9 +296,6 @@ class BoardDetailPage extends StatelessWidget {
             const SizedBox(height: 8),
             Text('id: $id'),
             Text('name: $name'),
-            Text('public: $isPublic'),
-            Text('keyProtected: $keyProtected'),
-            Text('accessKey: ${accessKey ?? '(none)'}'),
             Text('tiles filled: $filled / ${size is int ? size * size : '?'}'),
             const SizedBox(height: 24),
             ElevatedButton.icon(
