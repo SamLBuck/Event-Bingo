@@ -6,7 +6,6 @@ import java.util.List;
 
 
 public interface BoardRepository extends CrudRepository<Board, Integer> {
-    
 
     public Board findByBoardName(String boardName);
 

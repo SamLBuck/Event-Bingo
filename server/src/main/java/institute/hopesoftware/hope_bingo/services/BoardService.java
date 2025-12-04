@@ -11,13 +11,15 @@ import org.springframework.stereotype.Service;
 import institute.hopesoftware.hope_bingo.model.Board;
 import institute.hopesoftware.hope_bingo.model.Question;
 import institute.hopesoftware.hope_bingo.repositories.BoardRepository;
+import lombok.NoArgsConstructor;
 
 @Service
+@NoArgsConstructor
 public class BoardService {
 
-    private final BoardRepository boardRepository;
-
     @Autowired
+    private BoardRepository boardRepository;
+
     public BoardService(BoardRepository boardRepository) {
         this.boardRepository = boardRepository;
     }
