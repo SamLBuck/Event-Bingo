@@ -23,7 +23,7 @@ public class GameService {
     @Autowired
     private BoardRepository boardRepository;
 
-    private ArrayList<Game> games = new ArrayList<>();
+    private ArrayList<Game> games = new ArrayList<Game>();
 
     @SuppressWarnings("null")
     public Game createNewGame(Integer bID, String hostPlayerName, Boolean isPublic, String password){
