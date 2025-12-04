@@ -1,12 +1,14 @@
 package institute.hopesoftware.hope_bingo.services;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import institute.hopesoftware.hope_bingo.model.Board;
 import institute.hopesoftware.hope_bingo.model.Game;
+import institute.hopesoftware.hope_bingo.model.GameBoard;
 import institute.hopesoftware.hope_bingo.repositories.BoardRepository;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,6 +29,11 @@ public class GameService {
     public Game createNewGame(Integer bID, String hostPlayerName, Boolean isPublic, String password){
 
         Board board = boardRepository.findById(bID).get();
+
+        if(board == null){
+            throw new IllegalArgumentException("Board with ID " + bID + " does not exist.");
+        }
+
         Game game;
         if (password.isEmpty()){
              game = new Game(board, hostPlayerName, isPublic);
@@ -38,6 +45,37 @@ public class GameService {
 
         return game;
 
+    }
+
+    public GameBoard joinGame(String gameCode, String playerName, String password, Integer playerUUID){
+        // Find the game with the given gameCode
+        for (Game game : games) {
+            if (game.getGameCode().equals(gameCode)) {
+                if(game.getPassword().equals(password) || game.getPassword().isEmpty()){
+                    // Check if the password matches
+                    if(!game.getBoardStates().containsKey(playerName)){
+                    return game.addPlayer(playerName);
+                    }else{
+                        throw new institute.hopesoftware.hope_bingo.exceptions.DuplicatePlayerException("Player name already exists in the game.");
+                    }
+                }
+                // Attempt to join the game
+                
+            }
+        }
+
+        throw new IllegalArgumentException("Game not found or incorrect password.");
+        // If no game is found, return null or throw an exception as needed
+        
+    }
+
+    public HashMap<String,GameBoard> getGameBoard(String gameCode){
+        for (Game game : games) {
+            if (game.getGameCode().equals(gameCode)) {
+                return game.getBoardStates();
+            }
+        }
+        throw new IllegalArgumentException("Game not found.");
     }
 
 
