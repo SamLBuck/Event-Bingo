@@ -89,9 +89,7 @@ class _BoardTilesPageState extends State<BoardTilesPage> {
     if (nonEmpty.length != _size * _size) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Please fill all ${_size * _size} tiles before creating.',
-          ),
+          content: Text('Please fill ${_size * _size} tiles before creating.'),
         ),
       );
       return;
