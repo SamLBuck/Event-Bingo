@@ -12,7 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
-
+import jakarta.persistence.OneToMany;
 import lombok.ToString;
 
 @lombok.Getter
@@ -26,7 +26,7 @@ public class Board {
     private String boardAuthor;
 
     @NonNull
-    @ManyToOne
+    @OneToMany(mappedBy = "board")
     private Set<Question> questions = new HashSet<Question>();
 
     @NonNull

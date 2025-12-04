@@ -6,7 +6,7 @@
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
 
-                      <changeSet id="createTable-board" author="MS">
+                      <changeSet id="create-board" author="MS">
                         <createTable tableName="board">
                             <column name="id" type="integer" autoIncrement="true" startWith="100" >
                                 <constraints nullable="false" primaryKey="true"/>
