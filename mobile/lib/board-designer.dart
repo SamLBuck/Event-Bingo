@@ -2,11 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mobile/home_screen.dart';
 import 'package:mobile/playscreen.dart';
 
-import institute.hopesoftware.hope_bingo.model.Board;
-
-
-// import institute.hopesoftware.hope_bingo.model.Board;
-
 class BoardTilesPage extends StatefulWidget {
   BoardTilesPage({super.key, this.title = 'Board'});
   final tiles = List<String>.generate(
@@ -83,31 +78,77 @@ class _BoardTilesPageState extends State<BoardTilesPage> {
     }
   }
 
-  void _onCreatePressed() {
-    final boardName = _nameCtrl.text.trim();
-    final description = _descCtrl.text.trim();
-    final tiles = _tiles.where((t) => t.trim().isNotEmpty).toSet();
+  Future<void> _onCreatePressed() async {
+    final rawName = _nameCtrl.text.trim();
+    final boardName = rawName.isEmpty ? 'Untitled Board' : rawName;
+    final boardDesc = _descCtrl.text.trim();
 
+    final trimmedTiles = _tiles.map((t) => t.trim()).toList();
+    final nonEmpty = trimmedTiles.where((t) => t.isNotEmpty).toList();
 
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => HomeScreen(
+    if (nonEmpty.length != _size * _size) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Please fill all ${_size * _size} tiles before creating.',
           ),
         ),
       );
-    
-    // Navigator.of(context).pushNamed(
-    //   '/board',
-    //   arguments: {
-    //     'id': 'demo_${DateTime.now().millisecondsSinceEpoch}',
-    //     'name': boardName.isEmpty ? 'Untitled Board' : boardName,
-    //     'filled': _filledCount,
-    //     'size': _size,
-    //   },
-    // );
+      return;
+    }
 
-    // Board board = Board(tiles: [],);
+    final unique = nonEmpty.toSet();
+    if (unique.length != nonEmpty.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Each tile must be unique (no duplicate events).'),
+        ),
+      );
+      return;
+    }
+
+    final payload = {
+      'boardAuthor': 'TODO_AUTHOR',
+      'boardName': boardName,
+      'description': boardDesc,
+      'questions': nonEmpty,
+    };
+
+    final summary = [
+      'Name: $boardName',
+      'Description: ${boardDesc.isEmpty ? 'none' : boardDesc}',
+      'Tiles filled: ${nonEmpty.length}',
+      'Author: ${payload['boardAuthor']}',
+    ].join('\n');
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Create this board?'),
+          content: Text(summary),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Confirm'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      // TODO: send payload
+
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (context) => HomeScreen()));
+    }
   }
 
   @override
