@@ -46,14 +46,14 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
                   ),
                 ),
                 const Text(
-                  'Name',
+                  'Host Name',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 TextFormField(
                   controller: nameController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    hintText: 'Enter game name',
+                    hintText: 'Enter your name',
                   ),
                   validator: (value) {
                     return value == null || value.isEmpty
@@ -76,30 +76,29 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
                 ),
                 const SizedBox(height: 20),
 
-                const Text(
-                  'Max Players',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                TextFormField(
-                  controller: maxPlayersController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Enter maximum number of players',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a number';
-                    }
-                    final n = int.tryParse(value);
-                    if (n == null || n <= 0) {
-                      return 'Please enter a valid positive number';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 30),
-
+                // const Text(
+                //   'Max Players',
+                //   style: TextStyle(fontWeight: FontWeight.bold),
+                // ),
+                // TextFormField(
+                //   controller: maxPlayersController,
+                //   decoration: const InputDecoration(
+                //     border: OutlineInputBorder(),
+                //     hintText: 'Enter maximum number of players',
+                //   ),
+                //   keyboardType: TextInputType.number,
+                //   validator: (value) {
+                //     if (value == null || value.isEmpty) {
+                //       return 'Please enter a number';
+                //     }
+                //     final n = int.tryParse(value);
+                //     if (n == null || n <= 0) {
+                //       return 'Please enter a valid positive number';
+                //     }
+                //     return null;
+                //   },
+                // ),
+                // const SizedBox(height: 30),
                 Center(
                   child: ElevatedButton(
                     onPressed: () {

@@ -1,0 +1,14 @@
+[
+    {
+        "_id": "e0c2552e-cbd6-4b4d-948f-d452de9c33d2",
+        "colId": "history",
+        "containerId": "",
+        "name": "http://localhost:8080/api/games/gamelist",
+        "url": "http://localhost:8080/api/games/gamelist",
+        "method": "GET",
+        "sortNum": 0,
+        "created": "2025-11-23T16:36:28.430Z",
+        "modified": "2025-11-23T16:36:28.430Z",
+        "headers": []
+    }
+]

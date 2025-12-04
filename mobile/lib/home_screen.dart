@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/board-designer.dart';
 import 'package:mobile/create_game_widget.dart';
 import 'package:mobile/create_game_widget.dart';
+import 'package:mobile/playscreen.dart';
+import 'package:http/http.dart' as http;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,6 +18,20 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _noPasswordChecked = false;
   bool _notFullChecked = false;
+
+  Future<List<GameListEntry>> _getGamesList() async {
+    final url = Uri.parse('http://localhost:8080/api/games');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      var responseBody = json.decode(response.body);
+      return responseBody["games"];
+    } else if (response.statusCode == 404) {
+      return [];
+    } else {
+      throw Exception('Failed to load games');
+    }
+  }
 
   // TODO: Query fromm server
   List<GameListEntry> gamesList = [
@@ -178,7 +196,13 @@ class _HomeScreenState extends State<HomeScreen> {
           actions: [
             // TODO(Kyle): Implement join game functionality
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => PlayScreen()),
+                );
+              },
               child: const Text('Join'),
             ),
             TextButton(
@@ -208,9 +232,11 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
       ],
-      hintText: 'Search for board',
+      hintText: 'Search for game',
       onChanged: (String value) {
         debugPrint('The text has changed to: $value');
+        // TEMPORARY: Test getting backend data
+        var test = _getGamesList();
       },
     );
   }
