@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile/board-designer.dart';
 import 'package:mobile/create_game_widget.dart';
-import 'package:mobile/create_game_widget.dart';
 import 'package:mobile/playscreen.dart';
 import 'package:http/http.dart' as http;
 
@@ -25,7 +24,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (response.statusCode == 200) {
       var responseBody = json.decode(response.body);
-      return responseBody["games"];
+      var gamesMap = responseBody["games"];
+      return gamesMap
+          .map<GameListEntry>(
+            (game) => GameListEntry(
+              title: game['title'],
+              author: game['author'],
+              hasPassword: game['hasPassword'],
+              maxPlayers: game['maxPlayers'],
+              gameKey: game['gameKey'],
+            ),
+          )
+          .toList();
     } else if (response.statusCode == 404) {
       return [];
     } else {
@@ -148,11 +158,30 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   Expanded(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: gamesList.length,
-                      itemBuilder: (context, index) {
-                        return gamesList[index];
+                    child: FutureBuilder(
+                      future: _getGamesList(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        } else if (snapshot.hasError) {
+                          return Center(
+                            child: Text('Error: ${snapshot.error}'),
+                          );
+                        } else if (!snapshot.hasData ||
+                            snapshot.data!.isEmpty) {
+                          return const Center(child: Text('No games found.'));
+                        } else {
+                          var games = snapshot.data!;
+                          return ListView.builder(
+                            itemCount: games.length,
+                            itemBuilder: (context, index) {
+                              return games[index];
+                            },
+                          );
+                        }
                       },
                     ),
                   ),

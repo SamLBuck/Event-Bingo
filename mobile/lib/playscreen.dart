@@ -95,7 +95,7 @@ class _PlayScreenState extends State<PlayScreen> {
                           : player_tiles_left[index] == 0
                           ? null
                           : Text(
-                            "${player_tiles_left[index]} Player(s) are ${index} away!",
+                            "${player_tiles_left[index]} Player(s) are $index away!",
                           ),
                 );
               },
