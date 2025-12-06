@@ -41,7 +41,9 @@ public class GameService {
              game = new Game(board, hostPlayerName, isPublic, password);
         }
 
-    
+
+           games.add(game);
+
 
         return game;
 

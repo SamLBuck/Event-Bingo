@@ -25,6 +25,7 @@ public class Game {
 
     public Game( Board gameBoard, String hostPlayer, Boolean isPublic){
         this.gameCode = String.format("%04d", rand.nextInt(1001));
+        this.hostPlayer = hostPlayer;
         this.gameBoard = gameBoard;
         this.isPublic = isPublic;
         
