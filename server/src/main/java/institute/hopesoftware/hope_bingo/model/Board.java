@@ -6,7 +6,7 @@ import java.util.Set;
 
 
 import io.micrometer.common.lang.NonNull;
-
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -22,13 +22,15 @@ public class Board {
 
     @ToString.Include
     @NonNull
+    @Column(name = "author")
     private String boardAuthor;
 
     @NonNull
-    @OneToMany(mappedBy = "board")
+    @OneToMany(mappedBy = "board", fetch = jakarta.persistence.FetchType.EAGER,cascade = jakarta.persistence.CascadeType.ALL)
     private Set<Question> questions = new HashSet<Question>();
 
     @NonNull
+    @Column(name = "name")
     @ToString.Include
     private String boardName;
 

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import institute.hopesoftware.hope_bingo.model.Board;
 import institute.hopesoftware.hope_bingo.model.Question;
 import institute.hopesoftware.hope_bingo.repositories.BoardRepository;
+import institute.hopesoftware.hope_bingo.repositories.QuestionRepository;
 import lombok.NoArgsConstructor;
 
 @Service
@@ -20,11 +21,14 @@ public class BoardService {
     @Autowired
     private BoardRepository boardRepository;
 
+    @Autowired
+    private QuestionRepository questionRepository;
+
     public BoardService(BoardRepository boardRepository) {
         this.boardRepository = boardRepository;
     }
 
-    public Board createNewBoard(Set<Question> questions, String gameTitle, String author) {
+    public Board createNewBoard(Set<String> questions, String gameTitle, String author) {
         Board board = new Board();
         board.setBoardName(gameTitle);
 
@@ -34,7 +38,12 @@ public class BoardService {
             board.setBoardAuthor(author);
         }
 
-        board.setQuestions(questions);
+        for (String q : questions) {
+            Question question = new Question(q);
+            question.setBoard(board);
+            questionRepository.save(question);
+        }
+  
 
         return boardRepository.save(board);
     }

@@ -1,5 +1,7 @@
 package institute.hopesoftware.hope_bingo.model;
 
+import java.util.Set;
+
 import io.micrometer.common.lang.NonNull;
 import jakarta.annotation.Nonnull;
 import jakarta.persistence.Entity;
@@ -30,6 +32,13 @@ public class Question {
     @ToString.Include
     @Nonnull
     private String text;
+
+    public void setBoard(Board board) {
+        this.board = board;
+        Set<Question> questions = board.getQuestions();
+        questions.add(this);
+        board.setQuestions(questions);
+    }
 
     
 }
