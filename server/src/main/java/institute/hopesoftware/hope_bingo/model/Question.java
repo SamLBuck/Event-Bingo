@@ -2,12 +2,15 @@ package institute.hopesoftware.hope_bingo.model;
 
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import io.micrometer.common.lang.NonNull;
 import jakarta.annotation.Nonnull;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -25,12 +28,14 @@ public class Question {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer Id;
 
-    @NonNull
+
     @ManyToOne
+    @JoinColumn(name = "board_id", nullable = false)
+    @JsonBackReference
     private Board board;
 
     @ToString.Include
-    @Nonnull
+    @lombok.NonNull
     private String text;
 
     public void setBoard(Board board) {

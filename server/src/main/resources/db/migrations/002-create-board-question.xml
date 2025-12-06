@@ -15,5 +15,8 @@
   />
 </changeSet>
 
+<changeSet id="modify-id-column-for-question" author="MS">
+  <addAutoIncrement tableName="question" columnName="id" startWith="100" incrementBy="1"/>
+</changeSet>
 
 </databaseChangeLog>

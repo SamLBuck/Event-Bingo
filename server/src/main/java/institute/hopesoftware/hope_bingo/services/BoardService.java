@@ -38,6 +38,8 @@ public class BoardService {
             board.setBoardAuthor(author);
         }
 
+        boardRepository.save(board);
+
         for (String q : questions) {
             Question question = new Question(q);
             question.setBoard(board);
@@ -45,7 +47,7 @@ public class BoardService {
         }
   
 
-        return boardRepository.save(board);
+        return board;
     }
 
     public List<Board> getBoards() {

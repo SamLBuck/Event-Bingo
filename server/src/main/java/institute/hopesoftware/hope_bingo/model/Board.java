@@ -3,7 +3,7 @@ package institute.hopesoftware.hope_bingo.model;
 import java.util.HashSet;
 import java.util.Set;
 
-
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import io.micrometer.common.lang.NonNull;
 import jakarta.persistence.Column;
@@ -12,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import lombok.AccessLevel;
 import lombok.ToString;
 
 @lombok.Getter
@@ -25,8 +26,10 @@ public class Board {
     @Column(name = "author")
     private String boardAuthor;
 
-    @NonNull
-    @OneToMany(mappedBy = "board", fetch = jakarta.persistence.FetchType.EAGER,cascade = jakarta.persistence.CascadeType.ALL)
+    
+    @OneToMany(mappedBy = "board", fetch = jakarta.persistence.FetchType.EAGER)
+    @lombok.Setter(AccessLevel.PROTECTED)
+    @JsonManagedReference
     private Set<Question> questions = new HashSet<Question>();
 
     @NonNull
@@ -37,4 +40,6 @@ public class Board {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+   
 }
