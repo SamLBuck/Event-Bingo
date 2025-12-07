@@ -37,11 +37,11 @@
         "method": "POST",
         "sortNum": 0,
         "created": "2025-12-06T21:25:09.245Z",
-        "modified": "2025-12-06T23:31:08.189Z",
+        "modified": "2025-12-07T00:02:54.047Z",
         "headers": [],
         "body": {
             "type": "json",
-            "raw": "{\n  \"hostPlayerName\": \"Bob\",\n  \"boardId\": 101,\n  \"isPublic\": false,\n  \"password\": \"bad_password123\"\n}",
+            "raw": "{\n  \"hostPlayerName\": \"Kyle\",\n  \"boardId\": 101,\n  \"isPublic\": true,\n  \"password\": \"\"\n}",
             "form": []
         }
     },
@@ -56,5 +56,22 @@
         "created": "2025-12-06T21:41:19.713Z",
         "modified": "2025-12-06T21:41:19.713Z",
         "headers": []
+    },
+    {
+        "_id": "196b83c5-0f00-45b8-b509-703e82bd06ab",
+        "colId": "history",
+        "containerId": "",
+        "name": "join game",
+        "url": "http://localhost:8080/api/games/0070/join",
+        "method": "POST",
+        "sortNum": 0,
+        "created": "2025-12-06T23:52:35.628Z",
+        "modified": "2025-12-07T00:22:17.577Z",
+        "headers": [],
+        "body": {
+            "type": "json",
+            "raw": "{\n  \"playerName\": \"Dad\",\n  \"password\": \"bad_password123\",\n  \"playerUUID\": 600\n}",
+            "form": []
+        }
     }
 ]

@@ -18,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _noPasswordChecked = false;
   bool _notFullChecked = false;
 
-  Future<List<GameListEntry>> _getGamesList(bool onlyShowPublic) async {
+  Future<List<GameListEntry>> _getGamesList() async {
     final url = Uri.parse('http://localhost:8080/api/games');
     final response = await http.get(url);
 
@@ -26,12 +26,18 @@ class _HomeScreenState extends State<HomeScreen> {
       var responseBody = json.decode(response.body);
       var gamesMap = responseBody["games"];
 
-      // if (onlyShowPublic) {
-      //   gamesMap = gamesMap.where((game) => game['isPublic']);
-      // }
-
       if (_noPasswordChecked) {
         gamesMap = gamesMap.where((game) => game['isPublic'] == true).toList();
+      }
+
+      if (_notFullChecked) {
+        gamesMap =
+            gamesMap.where((game) {
+              if (game['boardStates'] == null) {
+                return true;
+              }
+              return (game['boardStates'] as Map).length < 10;
+            }).toList();
       }
 
       return gamesMap
@@ -40,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: game['gameBoard']['boardName'],
               author: game['hostPlayer'],
               hasPassword: !game['isPublic'],
+              currentPlayers: game['boardStates'].length,
               maxPlayers: 10,
               gameKey: game['gameCode'],
             ),
@@ -108,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   Expanded(
                     child: FutureBuilder(
-                      future: _getGamesList(_noPasswordChecked),
+                      future: _getGamesList(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -210,11 +217,11 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
       ],
-      hintText: 'Search for game',
+      hintText: 'Search for board',
       onChanged: (String value) {
         debugPrint('The text has changed to: $value');
         // TEMPORARY: Test getting backend data
-        var test = _getGamesList(true);
+        var test = _getGamesList();
       },
     );
   }
@@ -252,6 +259,7 @@ class GameListEntry extends StatefulWidget {
   final String title;
   final String author;
   final bool hasPassword;
+  final int currentPlayers;
   final int maxPlayers;
   final String gameKey;
 
@@ -260,6 +268,7 @@ class GameListEntry extends StatefulWidget {
     required this.title,
     required this.author,
     required this.hasPassword,
+    required this.currentPlayers,
     required this.maxPlayers,
     required this.gameKey,
   });
@@ -269,8 +278,6 @@ class GameListEntry extends StatefulWidget {
 }
 
 class _GameListEntryState extends State<GameListEntry> {
-  int currentPlayers = 0;
-
   // Thanks Copilot for helping with this method.
   @override
   Widget build(BuildContext context) {
@@ -321,7 +328,7 @@ class _GameListEntryState extends State<GameListEntry> {
               Row(
                 children: [
                   const Icon(Icons.person),
-                  Text('$currentPlayers / ${widget.maxPlayers}'),
+                  Text('${widget.currentPlayers} / ${widget.maxPlayers}'),
                 ],
               ),
             ],
