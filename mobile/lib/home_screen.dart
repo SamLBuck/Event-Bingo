@@ -26,6 +26,20 @@ class _HomeScreenState extends State<HomeScreen> {
       var responseBody = json.decode(response.body);
       var gamesMap = responseBody["games"];
 
+      if (_searchController.text.isNotEmpty) {
+        gamesMap =
+            gamesMap.where((game) {
+              String boardName =
+                  game['gameBoard']['boardName'].toString().toLowerCase();
+              String searchText = _searchController.text.toLowerCase();
+              return boardName
+                  .split(' ')
+                  .any((word) => word.startsWith(searchText));
+            }).toList();
+      }
+
+      debugPrint("from thing${_searchController.text}");
+
       if (_noPasswordChecked) {
         gamesMap = gamesMap.where((game) => game['isPublic'] == true).toList();
       }
@@ -218,10 +232,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
       hintText: 'Search for board',
-      onChanged: (String value) {
-        debugPrint('The text has changed to: $value');
-        // TEMPORARY: Test getting backend data
-        var test = _getGamesList();
+      onSubmitted: (String value) {
+        setState(() {});
       },
     );
   }
