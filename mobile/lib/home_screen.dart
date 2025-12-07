@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:nativewrappers/_internal/vm/lib/ffi_native_type_patch.dart';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/board-designer.dart';
@@ -15,8 +16,40 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _joinGameController = TextEditingController();
   bool _noPasswordChecked = false;
   bool _notFullChecked = false;
+
+  Future<void> _joinGame({
+    required String gameCode,
+    required String playerName,
+    String? password,
+    Uint16? UUID,
+  }) async {
+    final url = Uri.parse('http://localhost:8080/api/games/$gameCode/join');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        if (password != null) 'password': password,
+        if (playerName.isNotEmpty) 'playerName': playerName,
+        if (UUID != null) 'playerUUID': UUID,
+      }),
+    );
+    if (response.statusCode == 200) {
+      debugPrint("Joined game successfully");
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => PlayScreen()),
+      );
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to join game: ${response.statusCode}')),
+      );
+    }
+  }
 
   Future<List<GameListEntry>> _getGamesList() async {
     final url = Uri.parse('http://localhost:8080/api/games');
@@ -27,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
       var gamesMap = responseBody["games"];
 
       if (_searchController.text.isNotEmpty) {
+        // Thanks chatGPT for this filtering code.
         gamesMap =
             gamesMap.where((game) {
               String boardName =
@@ -189,18 +223,28 @@ class _HomeScreenState extends State<HomeScreen> {
     builder:
         (context) => AlertDialog(
           title: const Text('Join game with key'),
-          content: TextField(
-            decoration: InputDecoration(hintText: 'Enter a game code'),
+          content: Column(
+            children: [
+              TextFormField(
+                controller: _joinGameController,
+                decoration: InputDecoration(hintText: 'Enter a game code'),
+                validator:
+                    (value) =>
+                        value == null || value.isEmpty
+                            ? 'Please enter a game code'
+                            : null,
+              ),
+              TextFormField(
+                decoration: InputDecoration(hintText: 'Enter your name'),
+              ),
+            ],
           ),
           actions: [
             // TODO(Kyle): Implement join game functionality
             TextButton(
               onPressed: () {
+                _joinGame(_joinGameController.text);
                 Navigator.of(context).pop();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => PlayScreen()),
-                );
               },
               child: const Text('Join'),
             ),
