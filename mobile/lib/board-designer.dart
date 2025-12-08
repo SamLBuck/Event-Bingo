@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/home_screen.dart';
-import 'package:mobile/playscreen.dart';
 
 class BoardTilesPage extends StatefulWidget {
   BoardTilesPage({super.key, this.title = 'Board'});

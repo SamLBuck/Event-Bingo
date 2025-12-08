@@ -3,18 +3,19 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile/playscreen.dart';
-import 'board_dropdown_widget.dart';
 
-Future<void> showJoinGameDialog(BuildContext context) {
+Future<void> showJoinGameDialog(BuildContext context, [String? clickedGame]) {
   return showDialog(
     context: context,
     barrierDismissible: true,
-    builder: (context) => const JoinGameDialog(),
+    builder: (context) => JoinGameDialog(clickedGame),
   );
 }
 
 class JoinGameDialog extends StatefulWidget {
-  const JoinGameDialog({super.key});
+  final String? clickedGame;
+
+  const JoinGameDialog(this.clickedGame, {super.key});
 
   @override
   State<JoinGameDialog> createState() => _JoinGameDialogState();
@@ -23,10 +24,21 @@ class JoinGameDialog extends StatefulWidget {
 class _JoinGameDialogState extends State<JoinGameDialog> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _accessKeyController = TextEditingController();
+  late final TextEditingController _accessKeyController;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  BoardMenuItem? _selectedBoard;
+
+  @override
+  void initState() {
+    super.initState();
+    _accessKeyController = TextEditingController(text: widget.clickedGame);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _accessKeyController.dispose();
+  }
 
   Future<void> _joinGame() async {
     final url = Uri.parse(

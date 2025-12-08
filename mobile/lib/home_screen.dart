@@ -269,59 +269,64 @@ class _GameListEntryState extends State<GameListEntry> {
   // Thanks Copilot for helping with this method.
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(8.0),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          SizedBox(
-            width: 380,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: () {
+        showJoinGameDialog(context, widget.gameKey);
+      },
+      child: Container(
+        padding: const EdgeInsets.all(8.0),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            SizedBox(
+              width: 380,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text('Host: ${widget.author}'),
+                ],
+              ),
+            ),
+            Column(
               children: [
                 Text(
-                  widget.title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  widget.gameKey,
+                  style: const TextStyle(fontStyle: FontStyle.italic),
                 ),
-                Text('Host: ${widget.author}'),
               ],
             ),
-          ),
-          Column(
-            children: [
-              Text(
-                widget.gameKey,
-                style: const TextStyle(fontStyle: FontStyle.italic),
-              ),
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    widget.hasPassword ? Icons.lock : Icons.lock_open,
-                    color: widget.hasPassword ? Colors.red : Colors.green,
-                  ),
-                  Text(widget.hasPassword ? 'Private' : 'Public'),
-                ],
-              ),
-              Row(
-                children: [
-                  const Icon(Icons.person),
-                  Text('${widget.currentPlayers} / ${widget.maxPlayers}'),
-                ],
-              ),
-            ],
-          ),
-        ],
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      widget.hasPassword ? Icons.lock : Icons.lock_open,
+                      color: widget.hasPassword ? Colors.red : Colors.green,
+                    ),
+                    Text(widget.hasPassword ? 'Private' : 'Public'),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.person),
+                    Text('${widget.currentPlayers} / ${widget.maxPlayers}'),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
