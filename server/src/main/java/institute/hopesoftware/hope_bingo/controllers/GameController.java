@@ -61,11 +61,11 @@ public class GameController {
     public ResponseEntity<JoinGameResponse> joinGame(@RequestBody JoinGameRequest request, @PathVariable String gameCode) {
         String playerName = request.playerName();
         String password = request.password();
-        Integer playerUUID = request.playerUUID();
+
 
         try{
 
-            GameBoard gb = gameService.joinGame(gameCode, playerName, password, playerUUID);
+            GameBoard gb = gameService.joinGame(gameCode, playerName, password);
             JoinGameResponse response = new JoinGameResponse(gb);
             return ResponseEntity.ok(response);
 

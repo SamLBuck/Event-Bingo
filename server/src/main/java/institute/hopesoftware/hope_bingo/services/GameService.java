@@ -49,7 +49,7 @@ public class GameService {
 
     }
 
-    public GameBoard joinGame(String gameCode, String playerName, String password, Integer playerUUID){
+    public GameBoard joinGame(String gameCode, String playerName, String password){
         // Find the game with the given gameCode
         for (Game game : games) {
             if (game.getGameCode().equals(gameCode)) {
