@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'dart:nativewrappers/_internal/vm/lib/ffi_native_type_patch.dart';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/board-designer.dart';
 import 'package:mobile/create_game_widget.dart';
+import 'package:mobile/join_game_widget.dart';
 import 'package:mobile/playscreen.dart';
 import 'package:http/http.dart' as http;
 
@@ -20,11 +20,12 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _noPasswordChecked = false;
   bool _notFullChecked = false;
 
+  // TODO: Maybe move to join game widget?
   Future<void> _joinGame({
     required String gameCode,
     required String playerName,
     String? password,
-    Uint16? UUID,
+    int? UUID,
   }) async {
     final url = Uri.parse('http://localhost:8080/api/games/$gameCode/join');
     final response = await http.post(
@@ -208,7 +209,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     debugPrint("Create game pressed");
                     showCreateGameDialog(context);
                   }),
-                  _button('Join with game code', openDialog),
+                  _button(
+                    'Join with game code',
+                    () => showJoinGameDialog(context),
+                  ),
                 ],
               ),
             ),
@@ -217,44 +221,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  Future openDialog() => showDialog(
-    context: context,
-    builder:
-        (context) => AlertDialog(
-          title: const Text('Join game with key'),
-          content: Column(
-            children: [
-              TextFormField(
-                controller: _joinGameController,
-                decoration: InputDecoration(hintText: 'Enter a game code'),
-                validator:
-                    (value) =>
-                        value == null || value.isEmpty
-                            ? 'Please enter a game code'
-                            : null,
-              ),
-              TextFormField(
-                decoration: InputDecoration(hintText: 'Enter your name'),
-              ),
-            ],
-          ),
-          actions: [
-            // TODO(Kyle): Implement join game functionality
-            TextButton(
-              onPressed: () {
-                _joinGame(_joinGameController.text);
-                Navigator.of(context).pop();
-              },
-              child: const Text('Join'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-  );
 
   SearchBar _searchBar() {
     return SearchBar(

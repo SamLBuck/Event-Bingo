@@ -1,44 +1,40 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'board_dropdown_widget.dart';
 
-// Thanks ChatGPT for helping me turn this into a popup dialog!
-
-Future<void> showCreateGameDialog(BuildContext context) {
+Future<void> showJoinGameDialog(BuildContext context) {
   return showDialog(
     context: context,
     barrierDismissible: true,
-    builder: (context) => const CreateGameDialog(),
+    builder: (context) => const JoinGameDialog(),
   );
 }
 
-class CreateGameDialog extends StatefulWidget {
-  const CreateGameDialog({super.key});
+// class MenuItem {
+//   final String name;
+//   final String author;
+//   final int id;
+
+//   const MenuItem({required this.name, required this.author, required this.id});
+// }
+
+// List<MenuItem> menuItems = [
+//   MenuItem(name: "Board A", author: "Kyle", id: 101),
+//   MenuItem(name: "Board B", author: "Bob", id: 102),
+//   MenuItem(name: "Board C", author: "Charlie", id: 103),
+// ];
+
+class JoinGameDialog extends StatefulWidget {
+  const JoinGameDialog({super.key});
 
   @override
-  State<CreateGameDialog> createState() => _CreateGameDialogState();
+  State<JoinGameDialog> createState() => _JoinGameDialogState();
 }
 
-class _CreateGameDialogState extends State<CreateGameDialog> {
+class _JoinGameDialogState extends State<JoinGameDialog> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _accessKeyController = TextEditingController();
-  final TextEditingController _maxPlayersController = TextEditingController();
-
-  Future<void> _createGame() async {
-    final url = Uri.parse('http://localhost:8080/api/games');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'hostPlayerName': _nameController.text,
-        'accessKey': _accessKeyController.text,
-        'maxPlayers': int.parse(_maxPlayersController.text),
-      }),
-    );
-  }
+  final TextEditingController accessKeyController = TextEditingController();
+  BoardMenuItem? selectedBoard;
 
   @override
   Widget build(BuildContext context) {
@@ -62,88 +58,95 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
                   ),
                 ),
                 const Text(
-                  'Name',
+                  'Access Key',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 TextFormField(
-                  controller: _nameController,
+                  controller: accessKeyController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    hintText: 'Enter game name',
+                    hintText: 'Enter access key',
                   ),
                   validator: (value) {
                     return value == null || value.isEmpty
-                        ? 'Please enter a name'
+                        ? 'Please enter an access key'
                         : null;
                   },
                 ),
                 const SizedBox(height: 20),
-
+                const Text(
+                  'Name',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                TextFormField(
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Enter your name',
+                  ),
+                  validator: (value) {
+                    return value == null || value.isEmpty
+                        ? 'Please enter your name'
+                        : null;
+                  },
+                ),
+                const SizedBox(height: 20),
                 const Text(
                   'Password (optional)',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 TextFormField(
-                  controller: _accessKeyController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     hintText: 'Enter Password (optional)',
                   ),
                 ),
                 const SizedBox(height: 20),
-
                 const Text(
-                  'Max Players',
+                  'UUID',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 TextFormField(
-                  controller: _maxPlayersController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    hintText: 'Enter maximum number of players',
+                    hintText: 'Enter UUID',
                   ),
-                  keyboardType: TextInputType.number,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter a number';
+                      return 'Please enter a positive integer';
+                    } else {
+                      var parsedValue = int.tryParse(value);
+                      if (parsedValue == null || parsedValue < 0) {
+                        return 'Please enter a positive integer';
+                      } else {
+                        return null;
+                      }
                     }
-                    final n = int.tryParse(value);
-                    if (n == null || n <= 0) {
-                      return 'Please enter a valid positive number';
-                    }
-                    return null;
                   },
                 ),
                 const SizedBox(height: 20),
-                // DropdownMenu<BoardListEntry>(
-                //   initialSelection: ,
-                // )
+                const Text(
+                  'Board',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                BoardDropdown(
+                  value: selectedBoard,
+                  onChanged: (menu) {
+                    setState(() {
+                      selectedBoard = menu;
+                    });
+                  },
+                ),
                 const SizedBox(height: 30),
-
-                Center(
+                Align(
+                  alignment: Alignment.centerRight,
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        // TODO: handle create-game logic using:
-                        // nameController.text
-                        // accessKeyController.text
-                        // maxPlayersController.text
-
-                        Navigator.pop(context); // close popup
+                        // Process the join game action here
+                        Navigator.of(context).pop();
                       }
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.lightBlueAccent,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 32,
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    child: const Text('Create Game'),
+                    child: const Text('Join Game'),
                   ),
                 ),
               ],
