@@ -26,7 +26,6 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _maxPlayersController = TextEditingController();
 
   BoardMenuItem? _selectedBoard;
 
@@ -75,14 +74,14 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
                   ),
                 ),
                 const Text(
-                  'Name',
+                  'Host Name',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    hintText: 'Enter game name',
+                    hintText: 'Enter your name',
                   ),
                   validator: (value) {
                     return value == null || value.isEmpty
@@ -104,30 +103,6 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                const Text(
-                  'Max Players',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                TextFormField(
-                  controller: _maxPlayersController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Enter maximum number of players',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a number';
-                    }
-                    final n = int.tryParse(value);
-                    if (n == null || n <= 0) {
-                      return 'Please enter a valid positive number';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
                 const Text(
                   'Board',
                   style: TextStyle(fontWeight: FontWeight.bold),
@@ -147,14 +122,9 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        // TODO: handle create-game logic using:
-                        // nameController.text
-                        // accessKeyController.text
-                        // maxPlayersController.text
                         _createGame();
                         Navigator.pop(context); // close popup
                       }
-                      debugPrint('bruh');
                     },
                     child: const Text('Create Game'),
                   ),
