@@ -28,8 +28,10 @@ public class BoardService {
         this.boardRepository = boardRepository;
     }
 
-    public Board createNewBoard(Set<String> questions, String gameTitle, String author) {
-        Board board = new Board();
+    public Board createNewBoard(Set<String> questions, String gameTitle, String author, String description){
+    Board board = new Board();
+    board.setDescription(description);
+
         board.setBoardName(gameTitle);
 
         if (author == null || author.isBlank()) {

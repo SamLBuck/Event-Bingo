@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/home_screen.dart';
 import 'package:mobile/playscreen.dart';
+import 'package:http/http.dart' as http;
 
 class BoardTilesPage extends StatefulWidget {
   BoardTilesPage({super.key, this.title = 'Board'});
@@ -17,6 +20,7 @@ class BoardTilesPage extends StatefulWidget {
 class _BoardTilesPageState extends State<BoardTilesPage> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _descCtrl;
+  late final TextEditingController _authorCtrl;
   late final List<String> _tiles;
   late final int _size;
 
@@ -27,6 +31,7 @@ class _BoardTilesPageState extends State<BoardTilesPage> {
     _tiles = List<String>.from(widget.tiles);
     _nameCtrl = TextEditingController(text: widget.title);
     _descCtrl = TextEditingController(text: '');
+    _authorCtrl = TextEditingController(text: '');
   }
 
   @override
@@ -81,71 +86,43 @@ class _BoardTilesPageState extends State<BoardTilesPage> {
   Future<void> _onCreatePressed() async {
     final rawName = _nameCtrl.text.trim();
     final boardName = rawName.isEmpty ? 'Untitled Board' : rawName;
-    final boardDesc = _descCtrl.text.trim();
 
     final trimmedTiles = _tiles.map((t) => t.trim()).toList();
     final nonEmpty = trimmedTiles.where((t) => t.isNotEmpty).toList();
-
-    if (nonEmpty.length != _size * _size) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please fill ${_size * _size} tiles before creating.'),
-        ),
-      );
-      return;
-    }
-
-    final unique = nonEmpty.toSet();
-    if (unique.length != nonEmpty.length) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Each tile must be unique (no duplicate events).'),
-        ),
-      );
-      return;
-    }
+    final questions = nonEmpty.toSet().toList();
+    final author =
+        _authorCtrl.text.trim().isEmpty ? 'anonymous' : _authorCtrl.text.trim();
+    final description = _descCtrl.text.trim();
 
     final payload = {
-      'boardAuthor': 'TODO_AUTHOR',
+      'questions': questions,
       'boardName': boardName,
-      'description': boardDesc,
-      'questions': nonEmpty,
+      'author': author,
+      'description': description,
     };
 
-    final summary = [
-      'Name: $boardName',
-      'Description: ${boardDesc.isEmpty ? 'none' : boardDesc}',
-      'Tiles filled: ${nonEmpty.length}',
-      'Author: ${payload['boardAuthor']}',
-    ].join('\n');
+    debugPrint('Create board pressed, payload: $payload');
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Create this board?'),
-          content: Text(summary),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Confirm'),
-            ),
-          ],
-        );
-      },
-    );
+    final uri = Uri.parse('http://localhost:8080/api/boards');
 
-    if (confirmed == true) {
-      // TODO: send payload
+    try {
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
 
+      debugPrint('Create board ${response.statusCode} ${response.body}');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        final boardId = data['id'];
+      } else {}
+      if (!mounted) return;
       Navigator.of(
         context,
-      ).push(MaterialPageRoute(builder: (context) => HomeScreen()));
+      ).pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
+    } catch (e) {
+      debugPrint('Error calling /api/boards: $e');
     }
   }
 
@@ -154,7 +131,14 @@ class _BoardTilesPageState extends State<BoardTilesPage> {
     assert(_tiles.length == _size * _size);
 
     return Scaffold(
-      appBar: AppBar(title: Text(_nameCtrl.text)),
+      appBar: AppBar(
+        title: const Text(
+          'Hope Bingo',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.lightBlueAccent,
+      ),
       body: Row(
         children: [
           Expanded(
@@ -171,7 +155,7 @@ class _BoardTilesPageState extends State<BoardTilesPage> {
                   final tileW = (gridW - spacing * (n - 1)) / n;
                   final tileH = (gridH - spacing * (n - 1)) / n;
 
-                  final ratio = tileW / tileH; // width / height
+                  final ratio = tileW / tileH;
 
                   return GridView.builder(
                     physics: const NeverScrollableScrollPhysics(),
@@ -220,6 +204,14 @@ class _BoardTilesPageState extends State<BoardTilesPage> {
                       labelText: 'Board Description',
                     ),
                     onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _authorCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Author',
+                      hintText: 'Enter author name',
+                    ),
                   ),
                 ],
               ),

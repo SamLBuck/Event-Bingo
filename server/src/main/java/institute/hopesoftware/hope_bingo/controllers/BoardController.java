@@ -27,7 +27,7 @@ public class BoardController {
 @PostMapping(value="boards")
 public ResponseEntity<NewBoardResponse> newBoard(@RequestBody NewBoardRequest request) 
 {
-    Board board = boardService.createNewBoard(request.questions(), request.boardName(), request.author());        
+    Board board = boardService.createNewBoard(request.questions(), request.boardName(), request.author(), request.description());     
     NewBoardResponse response = new NewBoardResponse(board.getId());        
     return ResponseEntity.ok(response);
 }

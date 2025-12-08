@@ -37,6 +37,11 @@ public class Board {
     @ToString.Include
     private String boardName;
 
+    @Column(name = "description")
+    @ToString.Include
+    private String description;
+
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
