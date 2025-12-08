@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:mobile/board-designer.dart';
 import 'package:mobile/create_game_widget.dart';
 import 'package:mobile/join_game_widget.dart';
-import 'package:mobile/playscreen.dart';
 import 'package:http/http.dart' as http;
 
 class HomeScreen extends StatefulWidget {
@@ -16,41 +15,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _joinGameController = TextEditingController();
   bool _noPasswordChecked = false;
   bool _notFullChecked = false;
-
-  // TODO: Maybe move to join game widget?
-  Future<void> _joinGame({
-    required String gameCode,
-    required String playerName,
-    String? password,
-    int? UUID,
-  }) async {
-    final url = Uri.parse('http://localhost:8080/api/games/$gameCode/join');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        if (password != null) 'password': password,
-        if (playerName.isNotEmpty) 'playerName': playerName,
-        if (UUID != null) 'playerUUID': UUID,
-      }),
-    );
-    if (response.statusCode == 200) {
-      debugPrint("Joined game successfully");
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => PlayScreen()),
-      );
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to join game: ${response.statusCode}')),
-      );
-    }
-  }
 
   Future<List<GameListEntry>> _getGamesList() async {
     final url = Uri.parse('http://localhost:8080/api/games');

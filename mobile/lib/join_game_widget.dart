@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:mobile/playscreen.dart';
 import 'board_dropdown_widget.dart';
 
 Future<void> showJoinGameDialog(BuildContext context) {
@@ -19,8 +23,37 @@ class JoinGameDialog extends StatefulWidget {
 class _JoinGameDialogState extends State<JoinGameDialog> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController accessKeyController = TextEditingController();
+  final TextEditingController _accessKeyController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   BoardMenuItem? _selectedBoard;
+
+  Future<void> _joinGame() async {
+    final url = Uri.parse(
+      'http://localhost:8080/api/games/${_accessKeyController.text}/join',
+    );
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'playerName': _nameController.text,
+        'password': _passwordController.text,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => PlayScreen()),
+      );
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to join game: ${response.statusCode}')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +81,7 @@ class _JoinGameDialogState extends State<JoinGameDialog> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 TextFormField(
-                  controller: accessKeyController,
+                  controller: _accessKeyController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     hintText: 'Enter access key',
@@ -65,6 +98,7 @@ class _JoinGameDialogState extends State<JoinGameDialog> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 TextFormField(
+                  controller: _nameController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     hintText: 'Enter your name',
@@ -81,46 +115,11 @@ class _JoinGameDialogState extends State<JoinGameDialog> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 TextFormField(
+                  controller: _passwordController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     hintText: 'Enter Password (optional)',
                   ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'UUID',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                TextFormField(
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Enter UUID',
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a positive integer';
-                    } else {
-                      var parsedValue = int.tryParse(value);
-                      if (parsedValue == null || parsedValue < 0) {
-                        return 'Please enter a positive integer';
-                      } else {
-                        return null;
-                      }
-                    }
-                  },
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Board',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                BoardDropdown(
-                  value: _selectedBoard,
-                  onChanged: (v) => setState(() => _selectedBoard = v),
-                  validator: (value) {
-                    if (value == null) return "Please select a board";
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 30),
                 Align(
@@ -128,7 +127,7 @@ class _JoinGameDialogState extends State<JoinGameDialog> {
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        // Process the join game action here
+                        _joinGame();
                         Navigator.of(context).pop();
                       }
                     },
