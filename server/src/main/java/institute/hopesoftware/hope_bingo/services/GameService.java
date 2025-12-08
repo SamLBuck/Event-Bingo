@@ -53,7 +53,7 @@ public class GameService {
         // Find the game with the given gameCode
         for (Game game : games) {
             if (game.getGameCode().equals(gameCode)) {
-                if(game.getPassword().isEmpty() || game.getPassword() == null){
+                if( game.getPassword() != null){
                     if(game.getPassword().equals(password))
                     // Check if the password matches
                     {
@@ -63,6 +63,12 @@ public class GameService {
                             throw new institute.hopesoftware.hope_bingo.exceptions.DuplicatePlayerException("Player name already exists in the game.");
                         }
                     }
+                }else{
+                    if (!game.getBoardStates().containsKey(playerName)) {
+                            return game.addPlayer(playerName);
+                        }else{
+                            throw new institute.hopesoftware.hope_bingo.exceptions.DuplicatePlayerException("Player name already exists in the game.");
+                        }
                 }
                 // Attempt to join the game
                 

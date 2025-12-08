@@ -62,15 +62,15 @@
         "colId": "history",
         "containerId": "",
         "name": "join game",
-        "url": "http://localhost:8080/api/games/0070/join",
+        "url": "http://localhost:8080/api/games/0759/join",
         "method": "POST",
         "sortNum": 0,
         "created": "2025-12-06T23:52:35.628Z",
-        "modified": "2025-12-07T00:22:17.577Z",
+        "modified": "2025-12-08T19:03:50.473Z",
         "headers": [],
         "body": {
             "type": "json",
-            "raw": "{\n  \"playerName\": \"Dad\",\n  \"password\": \"bad_password123\",\n  \"playerUUID\": 600\n}",
+            "raw": "{\n  \"playerName\": \"Bob\",\n  \"password\": \"\"\n}",
             "form": []
         }
     }
