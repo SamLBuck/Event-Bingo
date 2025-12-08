@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobile/board_dropdown_widget.dart';
 
 // Thanks ChatGPT for helping me turn this into a popup dialog!
 
@@ -24,8 +25,10 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _accessKeyController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _maxPlayersController = TextEditingController();
+
+  BoardMenuItem? _selectedBoard;
 
   Future<void> _createGame() async {
     final url = Uri.parse('http://localhost:8080/api/games');
@@ -34,8 +37,8 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'hostPlayerName': _nameController.text,
-        'accessKey': _accessKeyController.text,
-        'maxPlayers': int.parse(_maxPlayersController.text),
+        //'boardId': _selectedBoard.id,
+        'isPublic': _passwordController.text.isEmpty,
       }),
     );
   }
@@ -84,7 +87,7 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 TextFormField(
-                  controller: _accessKeyController,
+                  controller: _passwordController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     hintText: 'Enter Password (optional)',
@@ -115,9 +118,18 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
                   },
                 ),
                 const SizedBox(height: 20),
-                // DropdownMenu<BoardListEntry>(
-                //   initialSelection: ,
-                // )
+                const Text(
+                  'Board',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                BoardDropdown(
+                  value: _selectedBoard,
+                  onChanged: (v) => setState(() => _selectedBoard = v),
+                  validator: (value) {
+                    if (value == null) return 'Please select a board';
+                    return null;
+                  },
+                ),
                 const SizedBox(height: 30),
 
                 Align(
