@@ -9,20 +9,6 @@ Future<void> showJoinGameDialog(BuildContext context) {
   );
 }
 
-// class MenuItem {
-//   final String name;
-//   final String author;
-//   final int id;
-
-//   const MenuItem({required this.name, required this.author, required this.id});
-// }
-
-// List<MenuItem> menuItems = [
-//   MenuItem(name: "Board A", author: "Kyle", id: 101),
-//   MenuItem(name: "Board B", author: "Bob", id: 102),
-//   MenuItem(name: "Board C", author: "Charlie", id: 103),
-// ];
-
 class JoinGameDialog extends StatefulWidget {
   const JoinGameDialog({super.key});
 
@@ -34,7 +20,7 @@ class _JoinGameDialogState extends State<JoinGameDialog> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController accessKeyController = TextEditingController();
-  BoardMenuItem? selectedBoard;
+  BoardMenuItem? _selectedBoard;
 
   @override
   Widget build(BuildContext context) {
@@ -129,11 +115,11 @@ class _JoinGameDialogState extends State<JoinGameDialog> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 BoardDropdown(
-                  value: selectedBoard,
-                  onChanged: (menu) {
-                    setState(() {
-                      selectedBoard = menu;
-                    });
+                  value: _selectedBoard,
+                  onChanged: (v) => setState(() => _selectedBoard = v),
+                  validator: (value) {
+                    if (value == null) return "Please select a board";
+                    return null;
                   },
                 ),
                 const SizedBox(height: 30),
