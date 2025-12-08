@@ -53,7 +53,7 @@ public class GameService {
         // Find the game with the given gameCode
         for (Game game : games) {
             if (game.getGameCode().equals(gameCode)) {
-                if(game.getPassword().equals(password) || game.getPassword().isEmpty()){
+                if(game.getPassword().equals(password) || game.getPassword().isEmpty() || game.getPassword() == null){
                     // Check if the password matches
                     if(!game.getBoardStates().containsKey(playerName)){
                     return game.addPlayer(playerName);
