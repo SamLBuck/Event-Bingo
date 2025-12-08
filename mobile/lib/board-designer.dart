@@ -94,6 +94,7 @@ class _BoardTilesPageState extends State<BoardTilesPage> {
         _authorCtrl.text.trim().isEmpty ? 'anonymous' : _authorCtrl.text.trim();
     final description = _descCtrl.text.trim();
 
+    // IMPORTANT: match NewBoardRequest field names
     final payload = {
       'questions': questions,
       'boardName': boardName,
