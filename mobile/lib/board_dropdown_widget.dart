@@ -12,13 +12,7 @@ class BoardMenuItem {
   const BoardMenuItem({required this.name, required this.id});
 }
 
-List<BoardMenuItem> menuItems = [
-  BoardMenuItem(name: "Board A", id: 101),
-  BoardMenuItem(name: "Board B", id: 102),
-  BoardMenuItem(name: "Board C", id: 103),
-];
-
-class BoardDropdown extends StatelessWidget {
+class BoardDropdown extends StatefulWidget {
   final BoardMenuItem? value;
   final ValueChanged<BoardMenuItem?> onChanged;
   final String? Function(BoardMenuItem?)? validator;
@@ -30,24 +24,33 @@ class BoardDropdown extends StatelessWidget {
     this.validator,
   });
 
+  @override
+  State<BoardDropdown> createState() => _BoardDropdownState();
+}
+
+class _BoardDropdownState extends State<BoardDropdown> {
+  late Future<List<BoardMenuItem>> _boardsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _boardsFuture = _getBoardMenuItems();
+  }
+
   Future<List<BoardMenuItem>> _getBoardMenuItems() async {
     final url = Uri.parse('http://localhost:8080/api/boards');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       var responseBody = jsonDecode(response.body);
-      var boardList = responseBody['boards'];
+      var boardList = responseBody['boards'] as List<dynamic>;
 
-      List<BoardMenuItem> boardMenuItemList = [];
-      for (var board in boardList) {
-        boardMenuItemList.add(
-          BoardMenuItem(name: board['boardName'], id: board['id']),
-        );
-      }
-
-      return boardMenuItemList;
+      return boardList
+          .map(
+            (board) => BoardMenuItem(name: board['boardName'], id: board['id']),
+          )
+          .toList();
     } else {
-      // TODO: Maybe if I have time atually catch this exception somewhere
       throw Exception('Failed to load boards');
     }
   }
@@ -56,42 +59,44 @@ class BoardDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return FormField<BoardMenuItem>(
-          validator: validator,
-          initialValue: value,
-          builder: (formFieldState) {
-            final hasError = formFieldState.hasError;
+        return FutureBuilder<List<BoardMenuItem>>(
+          future: _boardsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CircularProgressIndicator();
+            }
+            if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            }
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color:
-                          hasError
-                              ? Theme.of(context).colorScheme.error
-                              : Theme.of(context).colorScheme.outline,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: FutureBuilder<List<BoardMenuItem>>(
-                    future: _getBoardMenuItems(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const CircularProgressIndicator();
-                      }
-                      if (snapshot.hasError) {
-                        return Text('Error: ${snapshot.error}');
-                      }
-                      final items = snapshot.data ?? [];
-                      return DropdownMenu<BoardMenuItem>(
+            final items = snapshot.data ?? [];
+
+            return FormField<BoardMenuItem>(
+              validator: widget.validator,
+              initialValue: widget.value,
+              builder: (formFieldState) {
+                final hasError = formFieldState.hasError;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color:
+                              hasError
+                                  ? Theme.of(context).colorScheme.error
+                                  : Theme.of(context).colorScheme.outline,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: DropdownMenu<BoardMenuItem>(
                         width: constraints.maxWidth,
-                        initialSelection: value,
+                        initialSelection: formFieldState.value ?? widget.value,
                         onSelected: (val) {
                           formFieldState.didChange(val);
-                          onChanged(val);
+                          widget.onChanged(val);
                         },
                         dropdownMenuEntries:
                             items
@@ -102,22 +107,22 @@ class BoardDropdown extends StatelessWidget {
                                   ),
                                 )
                                 .toList(),
-                      );
-                    },
-                  ),
-                ),
-                if (hasError)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      formFieldState.errorText!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                        fontSize: 12,
                       ),
                     ),
-                  ),
-              ],
+                    if (hasError)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          formFieldState.errorText!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             );
           },
         );
