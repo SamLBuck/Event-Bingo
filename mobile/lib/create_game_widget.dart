@@ -120,7 +120,8 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
                 // )
                 const SizedBox(height: 30),
 
-                Center(
+                Align(
+                  alignment: Alignment.centerRight,
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
@@ -132,17 +133,6 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
                         Navigator.pop(context); // close popup
                       }
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.lightBlueAccent,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 32,
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
                     child: const Text('Create Game'),
                   ),
                 ),
