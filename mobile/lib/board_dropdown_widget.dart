@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 // CHATGPT helped with adding the validator
 
@@ -27,6 +30,28 @@ class BoardDropdown extends StatelessWidget {
     this.validator,
   });
 
+  Future<List<BoardMenuItem>> _getBoardMenuItems() async {
+    final url = Uri.parse('http://localhost:8080/api/boards');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      var responseBody = jsonDecode(response.body);
+      var boardList = responseBody['boards'];
+
+      List<BoardMenuItem> boardMenuItemList = [];
+      for (var board in boardList) {
+        boardMenuItemList.add(
+          BoardMenuItem(name: board['boardName'], id: board['id']),
+        );
+      }
+
+      return boardMenuItemList;
+    } else {
+      // TODO: Maybe if I have time atually catch this exception somewhere
+      throw Exception('Failed to load boards');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -51,22 +76,34 @@ class BoardDropdown extends StatelessWidget {
                       width: 1.5,
                     ),
                   ),
-                  child: DropdownMenu<BoardMenuItem>(
-                    width: constraints.maxWidth,
-                    initialSelection: value,
-                    onSelected: (val) {
-                      formFieldState.didChange(val);
-                      onChanged(val);
+                  child: FutureBuilder<List<BoardMenuItem>>(
+                    future: _getBoardMenuItems(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const CircularProgressIndicator();
+                      }
+                      if (snapshot.hasError) {
+                        return Text('Error: ${snapshot.error}');
+                      }
+                      final items = snapshot.data ?? [];
+                      return DropdownMenu<BoardMenuItem>(
+                        width: constraints.maxWidth,
+                        initialSelection: value,
+                        onSelected: (val) {
+                          formFieldState.didChange(val);
+                          onChanged(val);
+                        },
+                        dropdownMenuEntries:
+                            items
+                                .map(
+                                  (menu) => DropdownMenuEntry<BoardMenuItem>(
+                                    value: menu,
+                                    label: menu.name,
+                                  ),
+                                )
+                                .toList(),
+                      );
                     },
-                    dropdownMenuEntries:
-                        menuItems
-                            .map(
-                              (menu) => DropdownMenuEntry<BoardMenuItem>(
-                                value: menu,
-                                label: menu.name,
-                              ),
-                            )
-                            .toList(),
                   ),
                 ),
                 if (hasError)

@@ -37,10 +37,20 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'hostPlayerName': _nameController.text,
-        //'boardId': _selectedBoard.id,
+        'boardId': _selectedBoard!.id, // null should be checked on validator
         'isPublic': _passwordController.text.isEmpty,
+        'password': _passwordController.text,
       }),
     );
+
+    if (response.statusCode != 200) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to create game: ${response.statusCode}'),
+        ),
+      );
+    }
   }
 
   @override
@@ -141,9 +151,10 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
                         // nameController.text
                         // accessKeyController.text
                         // maxPlayersController.text
-
+                        _createGame();
                         Navigator.pop(context); // close popup
                       }
+                      debugPrint('bruh');
                     },
                     child: const Text('Create Game'),
                   ),

@@ -37,11 +37,11 @@
         "method": "POST",
         "sortNum": 0,
         "created": "2025-12-06T21:25:09.245Z",
-        "modified": "2025-12-07T19:07:35.573Z",
+        "modified": "2025-12-08T17:12:16.748Z",
         "headers": [],
         "body": {
             "type": "json",
-            "raw": "{\n  \"hostPlayerName\": \"Bob\",\n  \"boardId\": 101,\n  \"isPublic\": false,\n  \"password\": \"ASSWORD\"\n}",
+            "raw": "{\n  \"hostPlayerName\": \"Bob\",\n  \"boardId\": 101,\n  \"isPublic\": true,\n  \"password\": \"\"\n}",
             "form": []
         }
     },
