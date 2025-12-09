@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/board-designer.dart';
 import 'package:mobile/create_game_widget.dart';
-import 'package:mobile/create_game_widget.dart';
+import 'package:mobile/join_game_widget.dart';
+import 'package:http/http.dart' as http;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,65 +18,61 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _noPasswordChecked = false;
   bool _notFullChecked = false;
 
-  // TODO: Query fromm server
-  List<GameListEntry> gamesList = [
-    GameListEntry(
-      title: 'Test Board',
-      author: 'Kyle',
-      hasPassword: true,
-      maxPlayers: 5,
-      gameKey: 'ABCD1234',
-    ),
-    GameListEntry(
-      title: 'Sample Board',
-      author: 'Alice',
-      hasPassword: false,
-      maxPlayers: 10,
-      gameKey: 'EFGH5678',
-    ),
-    GameListEntry(
-      title: 'Fun Board',
-      author: 'Bob',
-      hasPassword: true,
-      maxPlayers: 8,
-      gameKey: 'IJKL9012',
-    ),
-    GameListEntry(
-      title: 'Adventure Board',
-      author: 'Eve',
-      hasPassword: false,
-      maxPlayers: 6,
-      gameKey: 'MNOP3456',
-    ),
-    GameListEntry(
-      title: 'Cusack Board',
-      author: 'Joe',
-      hasPassword: true,
-      maxPlayers: 15,
-      gameKey: 'QRST7890',
-    ),
-    GameListEntry(
-      title: 'Mcfall Board',
-      author: 'Max',
-      hasPassword: true,
-      maxPlayers: 4,
-      gameKey: 'UVWX1122',
-    ),
-    GameListEntry(
-      title: 'Olegbemi Board',
-      author: 'Steven',
-      hasPassword: false,
-      maxPlayers: 6,
-      gameKey: 'YZAB3344',
-    ),
-    GameListEntry(
-      title: 'Cusack Board again',
-      author: 'Joe Again',
-      hasPassword: true,
-      maxPlayers: 15,
-      gameKey: 'CDEF5566',
-    ),
-  ];
+  Future<List<GameListEntry>> _getGamesList() async {
+    final url = Uri.parse('http://localhost:8080/api/games');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      var responseBody = json.decode(response.body);
+      var gamesMap = responseBody["games"];
+
+      if (_searchController.text.isNotEmpty) {
+        // Thanks chatGPT for this filtering code.
+        gamesMap =
+            gamesMap.where((game) {
+              String boardName =
+                  game['gameBoard']['boardName'].toString().toLowerCase();
+              String searchText = _searchController.text.toLowerCase();
+              return boardName
+                  .split(' ')
+                  .any((word) => word.startsWith(searchText));
+            }).toList();
+      }
+
+      debugPrint("from thing${_searchController.text}");
+
+      if (_noPasswordChecked) {
+        gamesMap = gamesMap.where((game) => game['isPublic'] == true).toList();
+      }
+
+      if (_notFullChecked) {
+        gamesMap =
+            gamesMap.where((game) {
+              if (game['boardStates'] == null) {
+                return true;
+              }
+              return (game['boardStates'] as Map).length < 10;
+            }).toList();
+      }
+
+      return gamesMap
+          .map<GameListEntry>(
+            (game) => GameListEntry(
+              title: game['gameBoard']['boardName'],
+              author: game['hostPlayer'],
+              hasPassword: !game['isPublic'],
+              currentPlayers: game['boardStates'].length,
+              maxPlayers: 10,
+              gameKey: game['gameCode'],
+            ),
+          )
+          .toList();
+    } else if (response.statusCode == 404) {
+      return [];
+    } else {
+      throw Exception('Failed to load games');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -130,11 +129,30 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   Expanded(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: gamesList.length,
-                      itemBuilder: (context, index) {
-                        return gamesList[index];
+                    child: FutureBuilder(
+                      future: _getGamesList(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        } else if (snapshot.hasError) {
+                          return Center(
+                            child: Text('Error: ${snapshot.error}'),
+                          );
+                        } else if (!snapshot.hasData ||
+                            snapshot.data!.isEmpty) {
+                          return const Center(child: Text('No games found.'));
+                        } else {
+                          var games = snapshot.data!;
+                          return ListView.builder(
+                            itemCount: games.length,
+                            itemBuilder: (context, index) {
+                              return games[index];
+                            },
+                          );
+                        }
                       },
                     ),
                   ),
@@ -157,7 +175,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     debugPrint("Create game pressed");
                     showCreateGameDialog(context);
                   }),
-                  _button('Join with game code', openDialog),
+                  _button(
+                    'Join with game code',
+                    () => showJoinGameDialog(context),
+                  ),
                 ],
               ),
             ),
@@ -166,28 +187,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  Future openDialog() => showDialog(
-    context: context,
-    builder:
-        (context) => AlertDialog(
-          title: const Text('Join game with key'),
-          content: TextField(
-            decoration: InputDecoration(hintText: 'Enter a game code'),
-          ),
-          actions: [
-            // TODO(Kyle): Implement join game functionality
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Join'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-  );
 
   SearchBar _searchBar() {
     return SearchBar(
@@ -209,8 +208,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
       hintText: 'Search for board',
-      onChanged: (String value) {
-        debugPrint('The text has changed to: $value');
+      onSubmitted: (String value) {
+        setState(() {});
       },
     );
   }
@@ -248,6 +247,7 @@ class GameListEntry extends StatefulWidget {
   final String title;
   final String author;
   final bool hasPassword;
+  final int currentPlayers;
   final int maxPlayers;
   final String gameKey;
 
@@ -256,6 +256,7 @@ class GameListEntry extends StatefulWidget {
     required this.title,
     required this.author,
     required this.hasPassword,
+    required this.currentPlayers,
     required this.maxPlayers,
     required this.gameKey,
   });
@@ -265,64 +266,67 @@ class GameListEntry extends StatefulWidget {
 }
 
 class _GameListEntryState extends State<GameListEntry> {
-  int currentPlayers = 0;
-
   // Thanks Copilot for helping with this method.
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(8.0),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          SizedBox(
-            width: 380,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: () {
+        showJoinGameDialog(context, widget.gameKey);
+      },
+      child: Container(
+        padding: const EdgeInsets.all(8.0),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            SizedBox(
+              width: 380,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text('Host: ${widget.author}'),
+                ],
+              ),
+            ),
+            Column(
               children: [
                 Text(
-                  widget.title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  widget.gameKey,
+                  style: const TextStyle(fontStyle: FontStyle.italic),
                 ),
-                Text('Author: ${widget.author}'),
               ],
             ),
-          ),
-          Column(
-            children: [
-              Text(
-                widget.gameKey,
-                style: const TextStyle(fontStyle: FontStyle.italic),
-              ),
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    widget.hasPassword ? Icons.lock : Icons.lock_open,
-                    color: widget.hasPassword ? Colors.red : Colors.green,
-                  ),
-                  Text(widget.hasPassword ? 'Private' : 'Public'),
-                ],
-              ),
-              Row(
-                children: [
-                  const Icon(Icons.person),
-                  Text('$currentPlayers / ${widget.maxPlayers}'),
-                ],
-              ),
-            ],
-          ),
-        ],
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      widget.hasPassword ? Icons.lock : Icons.lock_open,
+                      color: widget.hasPassword ? Colors.red : Colors.green,
+                    ),
+                    Text(widget.hasPassword ? 'Private' : 'Public'),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.person),
+                    Text('${widget.currentPlayers} / ${widget.maxPlayers}'),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

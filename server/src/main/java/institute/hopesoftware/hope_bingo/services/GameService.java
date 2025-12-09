@@ -49,17 +49,26 @@ public class GameService {
 
     }
 
-    public GameBoard joinGame(String gameCode, String playerName, String password, Integer playerUUID){
+    public GameBoard joinGame(String gameCode, String playerName, String password){
         // Find the game with the given gameCode
         for (Game game : games) {
             if (game.getGameCode().equals(gameCode)) {
-                if(game.getPassword().equals(password) || game.getPassword().isEmpty()){
+                if( game.getPassword() != null){
+                    if(game.getPassword().equals(password))
                     // Check if the password matches
-                    if(!game.getBoardStates().containsKey(playerName)){
-                    return game.addPlayer(playerName);
-                    }else{
-                        throw new institute.hopesoftware.hope_bingo.exceptions.DuplicatePlayerException("Player name already exists in the game.");
+                    {
+                        if (!game.getBoardStates().containsKey(playerName)) {
+                            return game.addPlayer(playerName);
+                        }else{
+                            throw new institute.hopesoftware.hope_bingo.exceptions.DuplicatePlayerException("Player name already exists in the game.");
+                        }
                     }
+                }else{
+                    if (!game.getBoardStates().containsKey(playerName)) {
+                            return game.addPlayer(playerName);
+                        }else{
+                            throw new institute.hopesoftware.hope_bingo.exceptions.DuplicatePlayerException("Player name already exists in the game.");
+                        }
                 }
                 // Attempt to join the game
                 

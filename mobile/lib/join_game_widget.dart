@@ -2,52 +2,67 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:mobile/board_dropdown_widget.dart';
+import 'package:mobile/playscreen.dart';
 
-// Thanks ChatGPT for helping me turn this into a popup dialog!
-
-Future<void> showCreateGameDialog(BuildContext context) {
+Future<void> showJoinGameDialog(BuildContext context, [String? clickedGame]) {
   return showDialog(
     context: context,
     barrierDismissible: true,
-    builder: (context) => const CreateGameDialog(),
+    builder: (context) => JoinGameDialog(clickedGame),
   );
 }
 
-class CreateGameDialog extends StatefulWidget {
-  const CreateGameDialog({super.key});
+class JoinGameDialog extends StatefulWidget {
+  final String? clickedGame;
+
+  const JoinGameDialog(this.clickedGame, {super.key});
 
   @override
-  State<CreateGameDialog> createState() => _CreateGameDialogState();
+  State<JoinGameDialog> createState() => _JoinGameDialogState();
 }
 
-class _CreateGameDialogState extends State<CreateGameDialog> {
+class _JoinGameDialogState extends State<JoinGameDialog> {
   final _formKey = GlobalKey<FormState>();
 
+  late final TextEditingController _accessKeyController;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  BoardMenuItem? _selectedBoard;
+  @override
+  void initState() {
+    super.initState();
+    _accessKeyController = TextEditingController(text: widget.clickedGame);
+  }
 
-  Future<void> _createGame() async {
-    final url = Uri.parse('http://localhost:8080/api/games');
+  @override
+  void dispose() {
+    super.dispose();
+    _accessKeyController.dispose();
+  }
+
+  Future<void> _joinGame() async {
+    final url = Uri.parse(
+      'http://localhost:8080/api/games/${_accessKeyController.text}/join',
+    );
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'hostPlayerName': _nameController.text,
-        'boardId': _selectedBoard!.id, // null should be checked on validator
-        'isPublic': _passwordController.text.isEmpty,
+        'playerName': _nameController.text,
         'password': _passwordController.text,
       }),
     );
 
-    if (response.statusCode != 200) {
+    if (response.statusCode == 200) {
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => PlayScreen()),
+      );
+    } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to create game: ${response.statusCode}'),
-        ),
+        SnackBar(content: Text('Failed to join game: ${response.statusCode}')),
       );
     }
   }
@@ -74,7 +89,24 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
                   ),
                 ),
                 const Text(
-                  'Host Name',
+                  'Access Key',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                TextFormField(
+                  controller: _accessKeyController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Enter access key',
+                  ),
+                  validator: (value) {
+                    return value == null || value.isEmpty
+                        ? 'Please enter an access key'
+                        : null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Name',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 TextFormField(
@@ -85,12 +117,11 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
                   ),
                   validator: (value) {
                     return value == null || value.isEmpty
-                        ? 'Please enter a name'
+                        ? 'Please enter your name'
                         : null;
                   },
                 ),
                 const SizedBox(height: 20),
-
                 const Text(
                   'Password (optional)',
                   style: TextStyle(fontWeight: FontWeight.bold),
@@ -102,31 +133,17 @@ class _CreateGameDialogState extends State<CreateGameDialog> {
                     hintText: 'Enter Password (optional)',
                   ),
                 ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Board',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                BoardDropdown(
-                  value: _selectedBoard,
-                  onChanged: (v) => setState(() => _selectedBoard = v),
-                  validator: (value) {
-                    if (value == null) return 'Please select a board';
-                    return null;
-                  },
-                ),
                 const SizedBox(height: 30),
-
                 Align(
                   alignment: Alignment.centerRight,
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        _createGame();
-                        Navigator.pop(context); // close popup
+                        _joinGame();
+                        Navigator.of(context).pop();
                       }
                     },
-                    child: const Text('Create Game'),
+                    child: const Text('Join Game'),
                   ),
                 ),
               ],
