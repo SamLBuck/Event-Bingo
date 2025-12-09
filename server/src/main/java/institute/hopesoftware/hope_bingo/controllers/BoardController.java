@@ -15,6 +15,7 @@ import institute.hopesoftware.hope_bingo.services.Requests.NewBoardRequest;
 import institute.hopesoftware.hope_bingo.services.Responses.GetBoardsResponse;
 import institute.hopesoftware.hope_bingo.services.Responses.NewBoardResponse;
 
+
 @RestController
 @RequestMapping("/api")
 public class BoardController {
